@@ -1,0 +1,36 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // One danmaku. Anyone can read; anyone can add a well-formed one; nobody can edit or delete.
+    match /danmu/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['videoId', 't', 'text', 'source', 'createdAt'])
+        && request.resource.data.keys().hasAll(['videoId', 't', 'text', 'source', 'createdAt'])
+        && request.resource.data.videoId is string
+        && request.resource.data.videoId.matches('^[A-Za-z0-9_-]{11}$')
+        && request.resource.data.t is number
+        && request.resource.data.t >= 0
+        && request.resource.data.t < 86400
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 100
+        && request.resource.data.source in ['user', 'comment']
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
+
+    // Seeding claim: created once per video, before its comment danmaku are written.
+    match /videos/{videoId} {
+      allow read: if true;
+      allow create: if videoId.matches('^[A-Za-z0-9_-]{11}$')
+        && request.resource.data.keys().hasOnly(['seededAt', 'seedCount'])
+        && request.resource.data.seededAt == request.time
+        && request.resource.data.seedCount is int
+        && request.resource.data.seedCount >= 0
+        && request.resource.data.seedCount <= 300;
+      allow update, delete: if false;
+    }
+  }
+}
