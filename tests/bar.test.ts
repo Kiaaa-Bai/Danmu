@@ -76,3 +76,11 @@ describe('Bar count', () => {
     expect(document.querySelector('.dm-count')!.textContent).toBe('267 danmu');
   });
 });
+
+describe('Bar settings button', () => {
+  it('uses an SVG gear rather than a text glyph', () => {
+    const button = document.querySelector('button[title="Danmu settings"]')!;
+    expect(button.querySelector('svg')).not.toBeNull();
+    expect(button.textContent).toBe('');
+  });
+});

@@ -151,6 +151,14 @@ html[dark] .dm-count {
   cursor: pointer;
 }
 
+.dm-icon-btn svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+  margin: auto;
+  fill: currentColor;
+}
+
 .dm-style-btn {
   text-shadow:
     0 0 1px #000,
