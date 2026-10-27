@@ -1,6 +1,6 @@
 export type SeedDanmu = { t: number; text: string };
 
-export const MAX_SEED_TEXT = 60;
+export const MAX_SEED_TEXT = 100;
 
 // m:ss or h:mm:ss, not glued to other digits, colons or a decimal point ("16:9", "v1.2:30", "12:345").
 const TIMESTAMP = /(?<![\d:.])(?:(\d{1,2}):)?(\d{1,3}):(\d{2})(?![\d:])/g;

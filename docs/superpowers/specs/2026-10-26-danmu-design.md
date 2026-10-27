@@ -144,7 +144,7 @@ On session start, `getDoc(videos/{id})`. If it exists, do nothing. Otherwise:
      collapsed) at that time.
    - Several timestamps (chapter lists) → one danmaku per line that has a timestamp: the line with
      its timestamp(s) and surrounding punctuation removed; skip if nothing is left.
-   - Truncate to 60 chars with `…`. Cap 300 danmaku per video.
+   - Truncate to 100 chars with `…` (was 60; Kia, 2026-10-26: long comments were cut short). Cap 300 danmaku per video.
 4. Claim: `setDoc(videos/{id})` — rules allow create only, so a second viewer seeding at the same
    time fails here and stops.
 5. Write danmaku in batches of ≤ 500. They arrive through the live listener like any other danmaku.

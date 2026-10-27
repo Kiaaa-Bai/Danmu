@@ -39,9 +39,11 @@ describe('commentToDanmu', () => {
     expect(commentToDanmu('at 5:00 it breaks', 200)).toEqual([]));
   it('drops zero-width characters', () =>
     expect(commentToDanmu('0:10 \u200b intro\n0:20 setup', 600)[0]!.text).toBe('intro'));
-  it('truncates long text to 60 chars with an ellipsis', () => {
-    const d = commentToDanmu('1:00 ' + 'x'.repeat(80), 600)[0]!;
-    expect(d.text).toHaveLength(60);
+  it('keeps comments up to 100 chars whole', () =>
+    expect(commentToDanmu('1:00 ' + 'x'.repeat(100), 600)[0]!.text).toBe('x'.repeat(100)));
+  it('truncates longer text to 100 chars with an ellipsis', () => {
+    const d = commentToDanmu('1:00 ' + 'x'.repeat(120), 600)[0]!;
+    expect(d.text).toHaveLength(100);
     expect(d.text.endsWith('…')).toBe(true);
   });
 });
