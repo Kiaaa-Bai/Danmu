@@ -1,10 +1,11 @@
-/* Danmaku layer: top half of the player, above the video, below YouTube's controls. */
+/* Danmaku layer: the whole player, above the video, below YouTube's controls.
+   How much of it scrolling danmaku use is the Area setting. */
 .dm-layer {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  height: 50%;
+  height: 100%;
   overflow: hidden;
   pointer-events: none;
   z-index: 20;
@@ -23,7 +24,6 @@
   line-height: 1.4;
   font-weight: 600;
   color: #fff;
-  opacity: 0.9;
   text-shadow:
     1px 0 1px #000,
     -1px 0 1px #000,
@@ -40,6 +40,7 @@
 
 /* Input bar under the player. Colours follow YouTube's light/dark theme variables. */
 .dm-bar {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -132,4 +133,137 @@ html[dark] .dm-input:focus {
 
 html[dark] .dm-count {
   color: #aaa;
+}
+
+/* Icon buttons: send style (A, in the chosen colour) and settings (gear). */
+.dm-icon-btn {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  color: inherit;
+  background: var(--yt-spec-badge-chip-background, rgba(0, 0, 0, 0.05));
+  cursor: pointer;
+}
+
+.dm-style-btn {
+  text-shadow:
+    0 0 1px #000,
+    0 0 1px #000;
+}
+
+/* Popover panels above the bar. */
+.dm-panel {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  z-index: 2100;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 320px;
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(28, 28, 28, 0.96);
+  color: #f1f1f1;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.dm-panel[hidden] {
+  display: none;
+}
+
+.dm-panel-style {
+  left: 44px;
+}
+
+.dm-panel-display {
+  right: 0;
+}
+
+.dm-row {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.dm-row-label {
+  font-size: 13px;
+  color: #aaa;
+}
+
+.dm-seg {
+  display: flex;
+  gap: 4px;
+}
+
+.dm-seg-btn {
+  flex: 1;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+  color: #f1f1f1;
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+}
+
+.dm-seg-btn[aria-pressed='true'] {
+  color: #0f0f0f;
+  background: #f1f1f1;
+}
+
+.dm-slider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dm-range {
+  flex: 1;
+  min-width: 0;
+  accent-color: #f1f1f1;
+}
+
+.dm-slider-value {
+  width: 52px;
+  font-size: 13px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.dm-palette {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+
+.dm-swatch {
+  aspect-ratio: 1;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.dm-swatch[aria-pressed='true'] {
+  outline: 2px solid #f1f1f1;
+  outline-offset: 2px;
+}
+
+.dm-icon-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+html[dark] .dm-icon-btn {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+html[dark] .dm-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
 }

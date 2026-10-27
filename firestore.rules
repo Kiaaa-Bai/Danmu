@@ -6,7 +6,7 @@ service cloud.firestore {
     // One danmaku. Anyone can read; anyone can add a well-formed one; nobody can edit or delete.
     match /danmu/{id} {
       allow read: if true;
-      allow create: if request.resource.data.keys().hasOnly(['videoId', 't', 'text', 'source', 'createdAt'])
+      allow create: if request.resource.data.keys().hasOnly(['videoId', 't', 'text', 'source', 'createdAt', 'color', 'mode'])
         && request.resource.data.keys().hasAll(['videoId', 't', 'text', 'source', 'createdAt'])
         && request.resource.data.videoId is string
         && request.resource.data.videoId.matches('^[A-Za-z0-9_-]{11}$')
@@ -17,7 +17,10 @@ service cloud.firestore {
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 100
         && request.resource.data.source in ['user', 'comment']
-        && request.resource.data.createdAt == request.time;
+        && request.resource.data.createdAt == request.time
+        // Optional, chosen by the sender: colour as #RRGGBB, and scrolling or fixed at the top/bottom.
+        && (!('color' in request.resource.data) || request.resource.data.color.matches('^#[0-9A-Fa-f]{6}$'))
+        && (!('mode' in request.resource.data) || request.resource.data.mode in ['scroll', 'top', 'bottom']);
       allow update, delete: if false;
     }
 

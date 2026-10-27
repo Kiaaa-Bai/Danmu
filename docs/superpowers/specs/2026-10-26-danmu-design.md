@@ -31,9 +31,24 @@ Who: Kia himself (deck slide 1, "Me and Everyone Learn from YouTube").
 4. Seeding runs once per video; later viewers read the stored danmaku.
 5. Stable enough for a live, hands-on demo tomorrow.
 
+## Danmaku settings (added 2026-10-26 evening, Kia's request)
+
+Kia: 「加和b站一样的弹幕字号，飞行速度，弹幕密度，弹幕位置和弹幕颜色调节功能」. His picks: colour chosen
+when sending and stored with the danmu; position = both Bilibili's display area and top/bottom fixed
+danmaku; the panel opens from a button on the input bar.
+
+- Viewer settings (gear button, `chrome.storage.local`, apply live): opacity 10–100 %, area
+  1/4 · 1/2 · 3/4 · Full, speed 5 steps (12/10/8/6/4 s across), font size 50–200 %, density
+  Fewer (≤ 15 on screen) · Normal (≤ 40) · More (no limit, overlap instead of dropping).
+- Send style ("A" button, stored on each danmu): mode Scroll · Top · Bottom, colour from Bilibili's
+  12-colour palette. Fixed danmaku stay 4 s, centred; bottom ones sit above the captions.
+- Firestore: `danmu` gains optional `color` (`#RRGGBB`) and `mode` (`scroll|top|bottom`); rules
+  updated and deployed. Old docs without them render white and scrolling.
+- Labels are English for the class audience; the 弹 toggle stays.
+
 ## Non-goals
 
-Login/accounts · likes, reports, moderation · a settings panel (colour, size, area) · Chrome Web
+Login/accounts · likes, reports, moderation · Chrome Web
 Store release · mobile · YouTube Shorts and live streams · replies to comments as danmaku.
 
 ## Anti-goals (a failure even if it "works")

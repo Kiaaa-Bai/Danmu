@@ -25,3 +25,13 @@ export function pickLane(
   }
   return -1;
 }
+
+/** Fixed (top/bottom) lanes hold one danmu until a media time. First lane free by `now`, or -1. */
+export function pickFixedLane(busyUntil: number[], now: number): number {
+  return busyUntil.findIndex((until) => until <= now);
+}
+
+/** How many lanes of `laneHeight` fit in `area` (0.25 … 1) of the player. At least one. */
+export function laneCount(playerHeight: number, area: number, laneHeight: number): number {
+  return Math.max(1, Math.floor((playerHeight * area) / laneHeight));
+}

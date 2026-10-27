@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pickLane, type LaneItem } from '@/lib/lanes';
+import { laneCount, pickFixedLane, pickLane, type LaneItem } from '@/lib/lanes';
 
 const W = 1000;
 const D = 8;
@@ -16,4 +16,18 @@ describe('pickLane', () => {
     expect(pickLane([justStarted], 2, W, 100, D, GAP)).toBe(0));
   it('does not reuse a lane if a longer, faster item would catch up', () =>
     expect(pickLane([justStarted], 2, W, 900, D, GAP)).toBe(-1));
+});
+
+describe('pickFixedLane', () => {
+  it('takes the first lane that is free by now', () => expect(pickFixedLane([5, 2, 0], 3)).toBe(1));
+  it('returns -1 when every lane is still showing', () => expect(pickFixedLane([5, 6], 3)).toBe(-1));
+});
+
+describe('laneCount', () => {
+  it('fits lanes into the chosen share of the player', () => {
+    expect(laneCount(700, 0.5, 35)).toBe(10);
+    expect(laneCount(700, 1, 35)).toBe(20);
+    expect(laneCount(700, 0.25, 35)).toBe(5);
+  });
+  it('always has at least one lane', () => expect(laneCount(20, 0.25, 35)).toBe(1));
 });

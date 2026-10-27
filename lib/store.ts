@@ -1,7 +1,16 @@
 import { collection, doc, onSnapshot, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
 import { db } from './firebase';
+import type { Mode } from './settings';
 
-export type Danmu = { id: string; videoId: string; t: number; text: string; source: 'user' | 'comment' };
+export type Danmu = {
+  id: string;
+  videoId: string;
+  t: number;
+  text: string;
+  source: 'user' | 'comment';
+  color?: string; // #RRGGBB; white when missing
+  mode?: Mode; // scrolling when missing
+};
 
 /** Live listener for one video's danmaku. `initial` is true for the first batch only. */
 export function subscribeDanmu(videoId: string, onAdded: (items: Danmu[], initial: boolean) => void): () => void {
@@ -14,7 +23,15 @@ export function subscribeDanmu(videoId: string, onAdded: (items: Danmu[], initia
         .filter((c) => c.type === 'added')
         .map((c) => {
           const d = c.doc.data();
-          return { id: c.doc.id, videoId: d.videoId, t: d.t, text: d.text, source: d.source } as Danmu;
+          return {
+            id: c.doc.id,
+            videoId: d.videoId,
+            t: d.t,
+            text: d.text,
+            source: d.source,
+            color: d.color,
+            mode: d.mode,
+          } as Danmu;
         });
       onAdded(added, initial);
       initial = false;
@@ -34,6 +51,8 @@ export async function sendDanmu(d: Omit<Danmu, 'source'>): Promise<void> {
     t: Math.round(d.t * 10) / 10,
     text: d.text,
     source: 'user',
+    color: d.color ?? '#FFFFFF',
+    mode: d.mode ?? 'scroll',
     createdAt: serverTimestamp(),
   });
 }

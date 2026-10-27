@@ -1,7 +1,7 @@
 import { Bar } from './bar';
-import { DURATION, Overlay } from './overlay';
+import { FIXED_DURATION, Overlay } from './overlay';
 import { seedIfNeeded } from './seed';
-import { enabledSetting } from './settings';
+import { displaySetting, enabledSetting, sendStyleSetting } from './settings';
 import { newDanmuId, sendDanmu, subscribeDanmu, type Danmu } from './store';
 import { RESET_LOOKBACK, Timeline } from './timeline';
 
@@ -37,30 +37,37 @@ export function startSession(videoId: string): () => void {
 
     const timeline = new Timeline<Danmu>();
     const ownIds = new Set<string>();
+    /** Own danmaku already shown on send; timeline.tick would hand them out a second time. */
+    const shownOnSend = new Set<string>();
     let inAd = false;
     /** Clears the screen and refills it with the danmaku that should be mid-flight right now. */
     const resync = () => {
       overlay.clear();
+      shownOnSend.clear();
       const now = video.currentTime;
       timeline.reset(now);
       if (inAd) return;
-      for (const d of timeline.between(now - DURATION, now - RESET_LOOKBACK)) {
-        overlay.show(d.text, d.t, video.playbackRate, ownIds.has(d.id), now - d.t);
+      const lookback = Math.max(overlay.duration, FIXED_DURATION);
+      for (const d of timeline.between(now - lookback, now - RESET_LOOKBACK)) {
+        overlay.show(d, d.t, video.playbackRate, ownIds.has(d.id), now - d.t);
       }
     };
     const overlay = new Overlay(player, resync);
     let fromComments = 0;
     let enabled = await enabledSetting.getValue();
+    let style = await sendStyleSetting.getValue();
+    overlay.applySettings(await displaySetting.getValue());
     if (stopped) return overlay.destroy();
 
     const updateCount = () => bar.setCount(timeline.size, fromComments);
     const bar = new Bar({
       async onSend(text) {
-        const d: Danmu = { id: newDanmuId(), videoId, t: video.currentTime, text, source: 'user' };
+        const d: Danmu = { id: newDanmuId(), videoId, t: video.currentTime, text, source: 'user', ...style };
         ownIds.add(d.id);
+        shownOnSend.add(d.id);
         timeline.add([d]);
         updateCount();
-        overlay.show(text, video.currentTime, video.playbackRate, true);
+        overlay.show(d, video.currentTime, video.playbackRate, true);
         await sendDanmu(d);
       },
       onToggle(on) {
@@ -68,8 +75,18 @@ export function startSession(videoId: string): () => void {
         overlay.setVisible(on && !player.classList.contains('ad-showing'));
         void enabledSetting.setValue(on);
       },
+      onStyle(next) {
+        style = next;
+        void sendStyleSetting.setValue(next);
+      },
+      onDisplay(settings) {
+        overlay.applySettings(settings);
+        void displaySetting.setValue(settings);
+      },
     });
     bar.setEnabled(enabled);
+    bar.setStyle(style);
+    bar.setDisplay(await displaySetting.getValue());
     overlay.setVisible(enabled);
     updateCount();
     cleanups.push(() => bar.destroy(), () => overlay.destroy());
@@ -85,7 +102,7 @@ export function startSession(videoId: string): () => void {
         const now = video.currentTime;
         for (const d of fresh) {
           if (!ownIds.has(d.id) && !inAd && !video.paused && d.t <= now && now - d.t <= LIVE_WINDOW) {
-            overlay.show(d.text, now, video.playbackRate);
+            overlay.show(d, now, video.playbackRate);
           }
         }
       }),
@@ -128,7 +145,8 @@ export function startSession(videoId: string): () => void {
       }
       if (!inAd && !video.paused) {
         for (const d of timeline.tick(video.currentTime)) {
-          overlay.show(d.text, video.currentTime, video.playbackRate, ownIds.has(d.id));
+          if (shownOnSend.delete(d.id)) continue;
+          overlay.show(d, video.currentTime, video.playbackRate, ownIds.has(d.id));
         }
       }
       const now = performance.now();
