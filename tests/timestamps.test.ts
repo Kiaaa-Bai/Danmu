@@ -33,7 +33,7 @@ describe('commentToDanmu', () => {
   it('drops timestamps past the end of the video', () =>
     expect(commentToDanmu('at 5:00 it breaks', 200)).toEqual([]));
   it('truncates long text to 60 chars with an ellipsis', () => {
-    const [d] = commentToDanmu('1:00 ' + 'x'.repeat(80), 600);
+    const d = commentToDanmu('1:00 ' + 'x'.repeat(80), 600)[0]!;
     expect(d.text).toHaveLength(60);
     expect(d.text.endsWith('…')).toBe(true);
   });

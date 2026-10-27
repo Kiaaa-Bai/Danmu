@@ -53,15 +53,17 @@ function removeTimestamps(line: string, found: Found[]): string {
 export function commentToDanmu(text: string, durationSec: number): SeedDanmu[] {
   const all = findTimestamps(text);
   if (all.length === 0) return [];
-  if (all.length === 1) {
-    return all[0].t <= durationSec ? [{ t: all[0].t, text: truncate(collapse(text)) }] : [];
+  const [first] = all;
+  if (all.length === 1 && first) {
+    return first.t <= durationSec ? [{ t: first.t, text: truncate(collapse(text)) }] : [];
   }
   const out: SeedDanmu[] = [];
   for (const line of text.split(/\r?\n/)) {
     const found = findTimestamps(line);
-    if (found.length === 0 || found[0].t > durationSec) continue;
+    const t = found[0]?.t;
+    if (t === undefined || t > durationSec) continue;
     const rest = removeTimestamps(line, found);
-    if (rest) out.push({ t: found[0].t, text: truncate(rest) });
+    if (rest) out.push({ t, text: truncate(rest) });
   }
   return out;
 }

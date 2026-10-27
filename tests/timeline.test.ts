@@ -52,4 +52,10 @@ describe('Timeline', () => {
     tl.reset(60);
     expect(tl.tick(60.1)).toEqual([]);
   });
+
+  it('between returns items with from < t <= to, in order', () => {
+    const tl = make();
+    expect(ids(tl.between(1, 3))).toEqual(['b', 'c']);
+    expect(ids(tl.between(-8, 0.5))).toEqual([]);
+  });
 });

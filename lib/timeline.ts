@@ -2,7 +2,7 @@
 export const SEEK_JUMP = 1.5;
 
 /** After a reset, items this far behind `now` still show, so one sitting exactly at `now` isn't skipped. */
-const RESET_LOOKBACK = 0.25;
+export const RESET_LOOKBACK = 0.25;
 
 /** Items sorted by time, and a cursor that hands out the ones playback has just passed. */
 export class Timeline<T extends { id: string; t: number }> {
@@ -41,13 +41,18 @@ export class Timeline<T extends { id: string; t: number }> {
     return out;
   }
 
+  /** Items with from < t <= to, in time order. */
+  between(from: number, to: number): T[] {
+    return this.items.slice(this.firstAfter(from), this.firstAfter(to));
+  }
+
   /** Index of the first item with t > time. */
   private firstAfter(time: number): number {
     let lo = 0;
     let hi = this.items.length;
     while (lo < hi) {
       const mid = (lo + hi) >> 1;
-      if (this.items[mid].t <= time) lo = mid + 1;
+      if (this.items[mid]!.t <= time) lo = mid + 1;
       else hi = mid;
     }
     return lo;
