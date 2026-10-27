@@ -118,7 +118,7 @@
   position: relative;
 }
 
-.dm-toggle svg {
+.dm-icon-btn.dm-toggle svg {
   width: 28px;
   height: 28px;
 }
