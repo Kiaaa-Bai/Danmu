@@ -2,7 +2,7 @@ import { defineConfig } from 'wxt';
 
 export default defineConfig({
   manifest: {
-    name: 'Danmu for YouTube',
+    name: 'Bullet Comments for YouTube',
     description: 'Time-synced bullet comments on YouTube videos.',
     permissions: ['storage'],
   },

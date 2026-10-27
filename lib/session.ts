@@ -180,7 +180,6 @@ export function startSession(videoId: string): () => void {
           const controls = player.querySelector<HTMLElement>('.ytp-chrome-bottom');
           bar.setBottomOffset((controls?.offsetHeight ?? 60) + 12);
         }
-        bar.setTime(contentTime);
       }
       raf = requestAnimationFrame(frame);
     };

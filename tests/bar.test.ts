@@ -106,7 +106,7 @@ describe('Bar in fullscreen', () => {
 
 describe('Bar settings button', () => {
   it('uses an SVG gear rather than a text glyph', () => {
-    const button = document.querySelector('button[title="Danmu settings"]')!;
+    const button = document.querySelector('button[title="Bullet comment settings"]')!;
     expect(button.querySelector('svg')).not.toBeNull();
     expect(button.textContent).toBe('');
   });
@@ -123,3 +123,19 @@ describe('Bar for an English-speaking audience', () => {
     expect(toggle.querySelector('.dm-slash')).not.toBeNull();
   });
 });
+
+describe('Bar wording', () => {
+  it('says "bullet comment", never "danmu", in anything a viewer can read', () => {
+    bar.setCount(267);
+    const root = document.querySelector('.dm-bar')!;
+    const visible = [
+      root.textContent,
+      ...[...root.querySelectorAll('[title]')].map((e) => e.getAttribute('title')),
+      document.querySelector<HTMLInputElement>('.dm-input')!.placeholder,
+    ].join(' | ');
+    expect(visible).not.toMatch(/danmu/i);
+    expect(document.querySelector<HTMLInputElement>('.dm-input')!.placeholder).toBe('Add a bullet comment…');
+    expect(document.querySelector('.dm-toggle')!.getAttribute('title')).toBe('267 bullet comments · show or hide');
+  });
+});
+

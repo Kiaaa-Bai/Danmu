@@ -1,4 +1,4 @@
-# Danmu for YouTube
+# Bullet Comments for YouTube
 
 A Chrome extension that brings danmaku (弹幕, bullet comments) to YouTube: comments that fly across the
 video at the exact second they were written. Made for learning from coding tutorials, where Bilibili's

@@ -19,14 +19,6 @@ export type BarHandlers = {
   onDisplay(settings: DisplaySettings): void;
 };
 
-function formatTime(sec: number): string {
-  const s = Math.floor(sec);
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const ss = String(s % 60).padStart(2, '0');
-  return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${ss}` : `${m}:${ss}`;
-}
-
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text?: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
   node.className = className;
@@ -159,12 +151,12 @@ export class Bar {
 
   constructor(private handlers: BarHandlers) {
     for (const b of [this.toggle, this.styleButton, this.send, this.settingsButton]) b.type = 'button';
-    this.styleButton.title = 'Danmu colour and position';
-    this.settingsButton.title = 'Danmu settings';
+    this.styleButton.title = 'Bullet comment colour and position';
+    this.settingsButton.title = 'Bullet comment settings';
     this.settingsButton.append(icon(GEAR_PATH));
     this.toggle.append(danmuIcon(), this.count);
     this.input.maxLength = MAX_LENGTH;
-    this.input.placeholder = 'Send a danmu…';
+    this.input.placeholder = 'Add a bullet comment…';
 
     // Send style: mode + Bilibili's palette.
     const palette = el('div', 'dm-palette');
@@ -316,13 +308,9 @@ export class Bar {
     this.densityControl.set(settings.density);
   }
 
-  setTime(sec: number): void {
-    this.input.placeholder = `Send a danmu at ${formatTime(sec)}…`;
-  }
-
   setCount(total: number): void {
     this.count.textContent = formatCount(total);
-    this.toggle.title = `${total} danmu · show or hide`;
+    this.toggle.title = `${total} bullet comment${total === 1 ? '' : 's'} · show or hide`;
   }
 
   setEnabled(on: boolean): void {
