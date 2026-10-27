@@ -46,8 +46,16 @@ function removeTimestamps(line: string, found: Found[]): string {
   return collapse(out).replace(EDGE_PUNCTUATION, '');
 }
 
+const ONLY_PUNCTUATION = /^[\s\-–—|:()[\]•·]*$/;
+
+/** "3:24 so good" → "so good": the danmu already appears at 3:24. Mid-sentence ones stay ("near the 2:45:00 mark"). */
+function remarkText(text: string, stamp: Found): string {
+  const atEdge = ONLY_PUNCTUATION.test(text.slice(0, stamp.start)) || ONLY_PUNCTUATION.test(text.slice(stamp.end));
+  return atEdge ? removeTimestamps(text, [stamp]) : collapse(text);
+}
+
 /**
- * One timestamp: the whole comment becomes one danmu at that time.
+ * One timestamp: the whole comment becomes one danmu at that time (minus the timestamp at its edge).
  * Several (a chapter list): every line with a timestamp becomes a danmu, timestamp removed.
  */
 export function commentToDanmu(text: string, durationSec: number): SeedDanmu[] {
@@ -55,7 +63,8 @@ export function commentToDanmu(text: string, durationSec: number): SeedDanmu[] {
   if (all.length === 0) return [];
   const [first] = all;
   if (all.length === 1 && first) {
-    return first.t <= durationSec ? [{ t: first.t, text: truncate(collapse(text)) }] : [];
+    const remark = first.t <= durationSec ? remarkText(text, first) : '';
+    return remark ? [{ t: first.t, text: truncate(remark) }] : [];
   }
   const out: SeedDanmu[] = [];
   for (const line of text.split(/\r?\n/)) {

@@ -30,6 +30,11 @@ describe('commentToDanmu', () => {
       { t: 262, text: 'comment your code' },
       { t: 358, text: 'data types' },
     ]));
+  it('drops a leading or trailing timestamp from a single remark', () => {
+    expect(commentToDanmu('3:24 the way the laptop runs 😭', 600)).toEqual([{ t: 204, text: 'the way the laptop runs 😭' }]);
+    expect(commentToDanmu('this part is so good (5:10)', 600)).toEqual([{ t: 310, text: 'this part is so good' }]);
+  });
+  it('skips a remark that is only a timestamp', () => expect(commentToDanmu('7:50', 600)).toEqual([]));
   it('drops timestamps past the end of the video', () =>
     expect(commentToDanmu('at 5:00 it breaks', 200)).toEqual([]));
   it('drops zero-width characters', () =>
