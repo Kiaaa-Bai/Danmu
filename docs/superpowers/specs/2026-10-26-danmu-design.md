@@ -44,7 +44,7 @@ danmaku; the panel opens from a button on the input bar.
   12-colour palette. Fixed danmaku stay 4 s, centred; bottom ones sit above the captions.
 - Firestore: `danmu` gains optional `color` (`#RRGGBB`) and `mode` (`scroll|top|bottom`); rules
   updated and deployed. Old docs without them render white and scrolling.
-- Labels are English for the class audience; the 弹 toggle stays.
+- Labels are English for the class audience. The on/off toggle is a chat-bubble icon, slashed when off — Kia: 「这个不能用中文字，因为是面向海外的」 (*no Chinese characters here; it's for an overseas audience*).
 
 ## Change: comment danmaku are fetched live, not stored (2026-10-26 ~21:00, Kia)
 

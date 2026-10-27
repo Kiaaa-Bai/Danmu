@@ -84,3 +84,15 @@ describe('Bar settings button', () => {
     expect(button.textContent).toBe('');
   });
 });
+
+describe('Bar for an English-speaking audience', () => {
+  it('shows no Chinese characters anywhere in the bar', () => {
+    expect(document.querySelector('.dm-bar')!.textContent).not.toMatch(/[\u4e00-\u9fff]/);
+  });
+
+  it('uses an icon for the on/off toggle, slashed when off', () => {
+    const toggle = document.querySelector('.dm-toggle')!;
+    expect(toggle.querySelector('svg')).not.toBeNull();
+    expect(toggle.querySelector('.dm-slash')).not.toBeNull();
+  });
+});

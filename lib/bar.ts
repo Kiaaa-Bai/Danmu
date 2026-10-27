@@ -80,14 +80,28 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 const GEAR_PATH =
   'M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z';
 
+// Material Icons "chat" (Apache 2.0): a speech bubble whose lines read as flying comments.
+const CHAT_PATH =
+  'M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z';
+
 /** Built node by node: YouTube's Trusted Types policy blocks innerHTML. */
-function gearIcon(): SVGSVGElement {
+function icon(d: string): SVGSVGElement {
   const svg = document.createElementNS(SVG_NS, 'svg');
   svg.setAttribute('viewBox', '0 0 24 24');
   svg.setAttribute('aria-hidden', 'true');
   const path = document.createElementNS(SVG_NS, 'path');
-  path.setAttribute('d', GEAR_PATH);
+  path.setAttribute('d', d);
   svg.append(path);
+  return svg;
+}
+
+/** The on/off toggle: a chat bubble, with a slash that CSS shows while danmaku are off. */
+function danmuIcon(): SVGSVGElement {
+  const svg = icon(CHAT_PATH);
+  const slash = document.createElementNS(SVG_NS, 'line');
+  slash.setAttribute('class', 'dm-slash');
+  for (const [k, v] of Object.entries({ x1: '3', y1: '3', x2: '21', y2: '21' })) slash.setAttribute(k, v);
+  svg.append(slash);
   return svg;
 }
 
@@ -100,7 +114,7 @@ function row(label: string, control: HTMLElement): HTMLElement {
 /** The row under the player: on/off, send style, input, Send, display settings, and the danmu count. */
 export class Bar {
   private root = el('div', 'dm-bar');
-  private toggle = el('button', 'dm-toggle', '弹');
+  private toggle = el('button', 'dm-icon-btn dm-toggle');
   private styleButton = el('button', 'dm-icon-btn dm-style-btn', 'A');
   private input = el('input', 'dm-input');
   private send = el('button', 'dm-send', 'Send');
@@ -143,7 +157,8 @@ export class Bar {
     this.toggle.title = 'Show or hide danmu';
     this.styleButton.title = 'Danmu colour and position';
     this.settingsButton.title = 'Danmu settings';
-    this.settingsButton.append(gearIcon());
+    this.settingsButton.append(icon(GEAR_PATH));
+    this.toggle.append(danmuIcon());
     this.input.maxLength = MAX_LENGTH;
     this.input.placeholder = 'Send a danmu…';
 

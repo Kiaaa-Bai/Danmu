@@ -71,8 +71,19 @@
 }
 
 .dm-toggle[aria-pressed='false'] {
-  opacity: 0.45;
-  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+/* The slash over the chat bubble, only while danmaku are off. */
+.dm-slash {
+  display: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.dm-toggle[aria-pressed='false'] .dm-slash {
+  display: inline;
 }
 
 .dm-toggle:hover,
