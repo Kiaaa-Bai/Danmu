@@ -59,3 +59,22 @@ describe('Timeline', () => {
     expect(ids(tl.between(-8, 0.5))).toEqual([]);
   });
 });
+
+describe('Timeline.remove', () => {
+  it('forgets an item so it is neither counted nor emitted', () => {
+    const tl = new Timeline<{ id: string; t: number }>();
+    tl.add([{ id: 'a', t: 1 }, { id: 'b', t: 2 }]);
+    tl.remove('a');
+    expect(tl.size).toBe(1);
+    expect(tl.has('a')).toBe(false);
+    tl.reset(0);
+    expect(ids(tl.tick(1.5))).toEqual([]);
+    expect(ids(tl.tick(2.1))).toEqual(['b']);
+  });
+  it('ignores an id it does not have', () => {
+    const tl = new Timeline<{ id: string; t: number }>();
+    tl.add([{ id: 'a', t: 1 }]);
+    tl.remove('zzz');
+    expect(tl.size).toBe(1);
+  });
+});

@@ -27,6 +27,15 @@ export class Timeline<T extends { id: string; t: number }> {
     return fresh;
   }
 
+  /** Forgets one item, e.g. an own danmu whose write was rejected. */
+  remove(id: string): void {
+    if (!this.ids.delete(id)) return;
+    this.items.splice(
+      this.items.findIndex((x) => x.id === id),
+      1,
+    );
+  }
+
   reset(now: number): void {
     this.prev = now - RESET_LOOKBACK;
   }

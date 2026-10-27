@@ -75,7 +75,17 @@ export function startSession(videoId: string): () => void {
         timeline.add([d]);
         updateCount();
         if (!inAd && overlay.show(d, d.t, video.playbackRate, true)) shownOnSend.add(d.id);
-        await sendDanmu(d);
+        try {
+          await sendDanmu(d);
+        } catch (err) {
+          // The write was rejected: take the danmu back everywhere; the bar puts the text back in the input.
+          timeline.remove(d.id);
+          ownIds.delete(d.id);
+          shownOnSend.delete(d.id);
+          overlay.removeItem(d.id);
+          updateCount();
+          throw err;
+        }
       },
       onToggle(on) {
         enabled = on;

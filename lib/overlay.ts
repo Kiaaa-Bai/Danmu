@@ -1,4 +1,4 @@
-import { laneCount, pickFixedLane, pickLane, type LaneItem } from './lanes';
+import { fittedMode, laneCount, pickFixedLane, pickLane, type LaneItem } from './lanes';
 import { DEFAULT_DISPLAY, DENSITY_LIMITS, SPEED_DURATIONS, type DisplaySettings, type Mode } from './settings';
 
 /** Media seconds a top/bottom danmu stays up. */
@@ -8,9 +8,9 @@ const LINE_HEIGHT = 1.4;
 /** Bottom danmu sit this share of the player above its bottom edge, clear of YouTube's controls. */
 const BOTTOM_OFFSET = 0.12;
 
-export type ShowItem = { text: string; color?: string; mode?: Mode };
+export type ShowItem = { id?: string; text: string; color?: string; mode?: Mode };
 
-type Flying = { el: HTMLElement; anim: Animation };
+type Flying = { id?: string; el: HTMLElement; anim: Animation };
 
 function resizeFixed(lanes: number[], n: number): void {
   while (lanes.length < n) lanes.push(0);
@@ -85,10 +85,8 @@ export class Overlay {
    * Returns false when it was dropped: hidden, too old, the density limit, or no free lane.
    */
   show(item: ShowItem, start: number, rate: number, own = false, age = 0): boolean {
-    const mode = item.mode ?? 'scroll';
-    const duration = mode === 'scroll' ? this.duration : FIXED_DURATION;
     const { density } = this.settings;
-    if (!this.visible || this.width === 0 || age >= duration) return false;
+    if (!this.visible || this.width === 0) return false;
     if (!own && this.flying.size >= DENSITY_LIMITS[density]) return false;
 
     const el = document.createElement('span');
@@ -98,6 +96,12 @@ export class Overlay {
     el.style.transform = `translateX(${this.width}px)`;
     this.layer.append(el);
     const w = el.offsetWidth;
+    const mode = fittedMode(item.mode ?? 'scroll', w, this.width);
+    const duration = mode === 'scroll' ? this.duration : FIXED_DURATION;
+    if (age >= duration) {
+      el.remove();
+      return false;
+    }
     const laneHeight = this.fontSize * LINE_HEIGHT;
     // More density, or your own danmu: when every lane is busy, overlap instead of dropping.
     const overlap = density === 'high' || own;
@@ -133,7 +137,7 @@ export class Overlay {
     anim.currentTime = age * 1000;
     anim.updatePlaybackRate(rate);
     if (this.paused) anim.pause();
-    const flying = { el, anim };
+    const flying = { id: item.id, el, anim };
     this.flying.add(flying);
     anim.finished
       .then(() => this.remove(flying))
@@ -144,6 +148,15 @@ export class Overlay {
   private remove(flying: Flying): void {
     flying.el.remove();
     this.flying.delete(flying);
+  }
+
+  /** Takes one danmu off the screen, e.g. an own danmu whose write was rejected. */
+  removeItem(id: string): void {
+    for (const f of this.flying) {
+      if (f.id !== id) continue;
+      f.anim.cancel();
+      this.remove(f);
+    }
   }
 
   pause(): void {

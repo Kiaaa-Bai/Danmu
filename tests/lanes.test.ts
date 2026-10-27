@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { laneCount, pickFixedLane, pickLane, type LaneItem } from '@/lib/lanes';
+import { fittedMode, laneCount, pickFixedLane, pickLane, type LaneItem } from '@/lib/lanes';
 
 const W = 1000;
 const D = 8;
@@ -30,4 +30,16 @@ describe('laneCount', () => {
     expect(laneCount(700, 0.25, 35)).toBe(5);
   });
   it('always has at least one lane', () => expect(laneCount(20, 0.25, 35)).toBe(1));
+});
+
+describe('fittedMode', () => {
+  it('keeps a top or bottom danmu that fits the player', () => {
+    expect(fittedMode('top', 400, 1000)).toBe('top');
+    expect(fittedMode('bottom', 1000, 1000)).toBe('bottom');
+  });
+  it('scrolls a top or bottom danmu wider than the player, so none of it is cut off', () => {
+    expect(fittedMode('top', 1200, 1000)).toBe('scroll');
+    expect(fittedMode('bottom', 1001, 1000)).toBe('scroll');
+  });
+  it('leaves scrolling danmu alone', () => expect(fittedMode('scroll', 5000, 1000)).toBe('scroll'));
 });

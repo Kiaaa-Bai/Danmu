@@ -48,3 +48,24 @@ describe('Bar keyboard', () => {
     expect(down.defaultPrevented).toBe(true);
   });
 });
+
+describe('Bar sending', () => {
+  it('puts the text back in the input when sending fails', async () => {
+    bar.destroy();
+    bar = new Bar({
+      onSend: async () => {
+        throw new Error('permission-denied');
+      },
+      onToggle() {},
+      onStyle() {},
+      onDisplay() {},
+    });
+    bar.setDisplay(DEFAULT_DISPLAY);
+    bar.mount();
+    const input = document.querySelector<HTMLInputElement>('.dm-input')!;
+    input.value = 'hello';
+    document.querySelector<HTMLButtonElement>('.dm-send')!.click();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(input.value).toBe('hello');
+  });
+});

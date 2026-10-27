@@ -1,3 +1,5 @@
+import type { Mode } from './settings';
+
 /** The last danmu sent into a lane. Times are media seconds; speed is px per media second. */
 export type LaneItem = { start: number; width: number; speed: number };
 
@@ -34,4 +36,9 @@ export function pickFixedLane(busyUntil: number[], now: number): number {
 /** How many lanes of `laneHeight` fit in `area` (0.25 … 1) of the player. At least one. */
 export function laneCount(playerHeight: number, area: number, laneHeight: number): number {
   return Math.max(1, Math.floor((playerHeight * area) / laneHeight));
+}
+
+/** A top/bottom danmu wider than the player would be cut off at both ends, so it scrolls instead. */
+export function fittedMode(mode: Mode, width: number, playerWidth: number): Mode {
+  return mode !== 'scroll' && width > playerWidth ? 'scroll' : mode;
 }
