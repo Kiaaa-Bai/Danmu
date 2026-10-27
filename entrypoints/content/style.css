@@ -113,10 +113,37 @@
   border-color: var(--yt-spec-text-secondary, #606060);
 }
 
-.dm-count {
-  flex: none;
-  color: var(--yt-spec-text-secondary, #606060);
-  font-size: 13px;
+/* The danmu count, inside the chat bubble of the on/off toggle. */
+.dm-toggle {
+  position: relative;
+}
+
+.dm-toggle svg {
+  width: 28px;
+  height: 28px;
+}
+
+.dm-toggle-count {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.2px;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  pointer-events: none;
+}
+
+html[dark] .dm-toggle-count,
+.dm-bar.dm-bar-fs .dm-toggle-count {
+  color: #0f0f0f;
+}
+
+.dm-toggle[aria-pressed='false'] .dm-toggle-count {
+  display: none;
 }
 
 /* YouTube marks its dark theme with html[dark]. */
@@ -142,9 +169,6 @@ html[dark] .dm-input:focus {
   border-color: rgba(255, 255, 255, 0.5);
 }
 
-html[dark] .dm-count {
-  color: #aaa;
-}
 
 /* Icon buttons: send style (A, in the chosen colour) and settings (gear). */
 .dm-icon-btn {
@@ -285,4 +309,40 @@ html[dark] .dm-icon-btn {
 
 html[dark] .dm-icon-btn:hover {
   background: rgba(255, 255, 255, 0.2);
+}
+
+/* Fullscreen: the bar floats at the bottom of the player, above YouTube's controls,
+   and fades out with them unless you're typing. */
+.dm-bar.dm-bar-fs {
+  position: absolute;
+  left: 50%;
+  bottom: var(--dm-fs-bottom, 72px);
+  z-index: 60;
+  width: min(760px, 70%);
+  margin: 0;
+  padding: 6px;
+  border-radius: 26px;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.55);
+  color: #f1f1f1;
+  transition: opacity 0.25s;
+}
+
+.dm-bar.dm-bar-fs .dm-icon-btn,
+.dm-bar.dm-bar-fs .dm-send {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.dm-bar.dm-bar-fs .dm-icon-btn:hover,
+.dm-bar.dm-bar-fs .dm-send:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.dm-bar.dm-bar-fs .dm-input {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+#movie_player.ytp-autohide .dm-bar-fs:not(:focus-within) {
+  opacity: 0;
+  pointer-events: none;
 }

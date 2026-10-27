@@ -15,7 +15,8 @@ export type DisplaySettings = {
   density: Density;
 };
 
-export const DEFAULT_DISPLAY: DisplaySettings = { opacity: 0.9, area: 0.5, speed: 3, fontScale: 1, density: 'normal' };
+/** Kia's picks (2026-10-26): 100% opacity, half the player, Slow, 130% font, Normal density. */
+export const DEFAULT_DISPLAY: DisplaySettings = { opacity: 1, area: 0.5, speed: 2, fontScale: 1.3, density: 'normal' };
 
 /** Media seconds to cross the player at each speed step (Bilibili's 极慢 … 极快). */
 export const SPEED_DURATIONS = [12, 10, 8, 6, 4] as const;

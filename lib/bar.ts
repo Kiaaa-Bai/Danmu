@@ -80,9 +80,8 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 const GEAR_PATH =
   'M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z';
 
-// Material Icons "chat" (Apache 2.0): a speech bubble whose lines read as flying comments.
-const CHAT_PATH =
-  'M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z';
+// Material Icons "chat_bubble" (Apache 2.0); the danmu count sits inside it.
+const BUBBLE_PATH = 'M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z';
 
 /** Built node by node: YouTube's Trusted Types policy blocks innerHTML. */
 function icon(d: string): SVGSVGElement {
@@ -97,12 +96,17 @@ function icon(d: string): SVGSVGElement {
 
 /** The on/off toggle: a chat bubble, with a slash that CSS shows while danmaku are off. */
 function danmuIcon(): SVGSVGElement {
-  const svg = icon(CHAT_PATH);
+  const svg = icon(BUBBLE_PATH);
   const slash = document.createElementNS(SVG_NS, 'line');
   slash.setAttribute('class', 'dm-slash');
   for (const [k, v] of Object.entries({ x1: '3', y1: '3', x2: '21', y2: '21' })) slash.setAttribute(k, v);
   svg.append(slash);
   return svg;
+}
+
+/** 267 → "267", 1234 → "1.2k": short enough to fit inside the bubble. */
+function formatCount(n: number): string {
+  return n < 1000 ? String(n) : `${Math.floor(n / 100) / 10}k`;
 }
 
 function row(label: string, control: HTMLElement): HTMLElement {
@@ -111,7 +115,7 @@ function row(label: string, control: HTMLElement): HTMLElement {
   return r;
 }
 
-/** The row under the player: on/off, send style, input, Send, display settings, and the danmu count. */
+/** The row under the player (inside it in fullscreen): on/off with the danmu count, send style, input, Send, settings. */
 export class Bar {
   private root = el('div', 'dm-bar');
   private toggle = el('button', 'dm-icon-btn dm-toggle');
@@ -119,7 +123,7 @@ export class Bar {
   private input = el('input', 'dm-input');
   private send = el('button', 'dm-send', 'Send');
   private settingsButton = el('button', 'dm-icon-btn');
-  private count = el('span', 'dm-count');
+  private count = el('span', 'dm-toggle-count');
   private stylePanel = el('div', 'dm-panel dm-panel-style');
   private displayPanel = el('div', 'dm-panel dm-panel-display');
   private enabled = true;
@@ -154,11 +158,10 @@ export class Bar {
 
   constructor(private handlers: BarHandlers) {
     for (const b of [this.toggle, this.styleButton, this.send, this.settingsButton]) b.type = 'button';
-    this.toggle.title = 'Show or hide danmu';
     this.styleButton.title = 'Danmu colour and position';
     this.settingsButton.title = 'Danmu settings';
     this.settingsButton.append(icon(GEAR_PATH));
-    this.toggle.append(danmuIcon());
+    this.toggle.append(danmuIcon(), this.count);
     this.input.maxLength = MAX_LENGTH;
     this.input.placeholder = 'Send a danmu…';
 
@@ -192,7 +195,6 @@ export class Bar {
       this.input,
       this.send,
       this.settingsButton,
-      this.count,
       this.stylePanel,
       this.displayPanel,
     );
@@ -217,8 +219,12 @@ export class Bar {
     }
     // Clicking a button must not leave it focused, or space would press it again instead of pausing.
     this.root.addEventListener('mousedown', (e) => {
-      if (e.target instanceof HTMLButtonElement) e.preventDefault();
+      if ((e.target as Element).closest('button')) e.preventDefault();
     });
+    // Inside the player (fullscreen), clicks must not reach it: a click pauses, a double-click exits fullscreen.
+    for (const type of ['click', 'dblclick', 'mousedown', 'mouseup', 'pointerdown', 'pointerup'] as const) {
+      this.root.addEventListener(type, (e) => e.stopPropagation());
+    }
     document.addEventListener('click', this.onDocumentClick, true);
     this.setEnabled(true);
   }
@@ -242,12 +248,30 @@ export class Bar {
     return this.root.isConnected;
   }
 
-  /** Puts the bar just below the player. False while YouTube hasn't rendered that spot yet. */
-  mount(): boolean {
+  get inPlayer(): boolean {
+    return this.root.classList.contains('dm-bar-fs');
+  }
+
+  /**
+   * Puts the bar just below the player, or, given the player (fullscreen), floating at its bottom.
+   * False while YouTube hasn't rendered the spot below the player yet.
+   */
+  mount(player?: HTMLElement): boolean {
+    if (player) {
+      this.root.classList.add('dm-bar-fs');
+      player.append(this.root);
+      return true;
+    }
     const below = document.querySelector('ytd-watch-flexy #below');
     if (!below) return false;
+    this.root.classList.remove('dm-bar-fs');
     below.prepend(this.root);
     return true;
+  }
+
+  /** In fullscreen, how far above the player's bottom edge the bar floats (clear of YouTube's controls). */
+  setBottomOffset(px: number): void {
+    this.root.style.setProperty('--dm-fs-bottom', `${px}px`);
   }
 
   private async submit(): Promise<void> {
@@ -296,7 +320,8 @@ export class Bar {
   }
 
   setCount(total: number): void {
-    this.count.textContent = `${total} danmu`;
+    this.count.textContent = formatCount(total);
+    this.toggle.title = `${total} danmu · show or hide`;
   }
 
   setEnabled(on: boolean): void {

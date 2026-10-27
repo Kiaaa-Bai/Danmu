@@ -173,7 +173,13 @@ export function startSession(videoId: string): () => void {
       const now = performance.now();
       if (now - lastBarUpdate > BAR_UPDATE_MS) {
         lastBarUpdate = now;
-        if (!bar.isMounted) bar.mount();
+        // Fullscreen: the bar moves into the player, floating just above YouTube's controls.
+        const fullscreen = document.fullscreenElement?.contains(player) ?? false;
+        if (!bar.isMounted || bar.inPlayer !== fullscreen) bar.mount(fullscreen ? player : undefined);
+        if (fullscreen) {
+          const controls = player.querySelector<HTMLElement>('.ytp-chrome-bottom');
+          bar.setBottomOffset((controls?.offsetHeight ?? 60) + 12);
+        }
         bar.setTime(contentTime);
       }
       raf = requestAnimationFrame(frame);

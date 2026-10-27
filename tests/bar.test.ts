@@ -71,9 +71,36 @@ describe('Bar sending', () => {
 });
 
 describe('Bar count', () => {
-  it('shows only the total number of danmu', () => {
+  it('shows the number of danmu inside the chat bubble', () => {
     bar.setCount(267);
-    expect(document.querySelector('.dm-count')!.textContent).toBe('267 danmu');
+    expect(document.querySelector('.dm-toggle .dm-toggle-count')!.textContent).toBe('267');
+    expect(document.querySelector('.dm-count')).toBeNull();
+  });
+  it('shortens big counts so they fit the bubble', () => {
+    bar.setCount(1234);
+    expect(document.querySelector('.dm-toggle-count')!.textContent).toBe('1.2k');
+  });
+});
+
+describe('Bar in fullscreen', () => {
+  it('moves into the player when the player goes fullscreen, and back after', () => {
+    const player = document.createElement('div');
+    document.body.append(player);
+    bar.mount(player);
+    expect(player.querySelector('.dm-bar.dm-bar-fs')).not.toBeNull();
+    bar.mount();
+    expect(document.querySelector('#below .dm-bar')).not.toBeNull();
+    expect(document.querySelector('.dm-bar-fs')).toBeNull();
+  });
+  it('keeps clicks inside the bar from reaching the player (no pause, no fullscreen toggle)', () => {
+    const player = document.createElement('div');
+    document.body.append(player);
+    bar.mount(player);
+    const seen: string[] = [];
+    for (const type of ['click', 'dblclick', 'mousedown']) player.addEventListener(type, () => seen.push(type));
+    const input = document.querySelector('.dm-input')!;
+    for (const type of ['click', 'dblclick', 'mousedown']) input.dispatchEvent(new MouseEvent(type, { bubbles: true }));
+    expect(seen).toEqual([]);
   });
 });
 
