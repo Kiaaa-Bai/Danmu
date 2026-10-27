@@ -1,5 +1,6 @@
 import { Bar } from './bar';
 import { DURATION, Overlay } from './overlay';
+import { seedIfNeeded } from './seed';
 import { enabledSetting } from './settings';
 import { newDanmuId, sendDanmu, subscribeDanmu, type Danmu } from './store';
 import { RESET_LOOKBACK, Timeline } from './timeline';
@@ -89,6 +90,10 @@ export function startSession(videoId: string): () => void {
         }
       }),
     );
+    // Feature 2: the first viewer turns timestamped comments into danmaku; they arrive via the listener.
+    void seedIfNeeded(videoId, import.meta.env.WXT_YOUTUBE_API_KEY).then((n) => {
+      if (n !== null) console.log(`[danmu] seeded ${n} danmu from comments`);
+    });
 
     const onPause = () => overlay.pause();
     const onPlay = () => overlay.resume();

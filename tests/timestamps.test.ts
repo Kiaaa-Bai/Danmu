@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { commentToDanmu, parseIsoDuration, parseTimestamps } from '@/lib/timestamps';
+import { buildSeeds, commentToDanmu, MAX_SEEDS, parseIsoDuration, parseTimestamps } from '@/lib/timestamps';
 
 describe('parseTimestamps', () => {
   it('reads m:ss', () => expect(parseTimestamps('data types and variables 5:58')).toEqual([358]));
@@ -32,9 +32,50 @@ describe('commentToDanmu', () => {
     ]));
   it('drops timestamps past the end of the video', () =>
     expect(commentToDanmu('at 5:00 it breaks', 200)).toEqual([]));
+  it('drops zero-width characters', () =>
+    expect(commentToDanmu('0:10 \u200b intro\n0:20 setup', 600)[0]!.text).toBe('intro'));
   it('truncates long text to 60 chars with an ellipsis', () => {
     const d = commentToDanmu('1:00 ' + 'x'.repeat(80), 600)[0]!;
     expect(d.text).toHaveLength(60);
     expect(d.text.endsWith('…')).toBe(true);
   });
 });
+
+describe('buildSeeds', () => {
+  it('turns comments into seed danmu with stable ids', () =>
+    expect(
+      buildSeeds(
+        [
+          { id: 'A', text: 'see 1:00 here' },
+          { id: 'B', text: '0:10 intro\n0:20 setup' },
+          { id: 'C', text: 'no timestamp' },
+        ],
+        600,
+      ),
+    ).toEqual([
+      { id: 'c_A_0', t: 60, text: 'see 1:00 here' },
+      { id: 'c_B_0', t: 10, text: 'intro' },
+      { id: 'c_B_1', t: 20, text: 'setup' },
+    ]));
+  it('caps a video at 300 seed danmu', () =>
+    expect(buildSeeds(Array.from({ length: 400 }, (_, i) => ({ id: `x${i}`, text: '0:05 hi' })), 600)).toHaveLength(
+      MAX_SEEDS,
+    ));
+  it('keeps one chapter per moment across chapter lists, single remarks first', () =>
+    expect(
+      buildSeeds(
+        [
+          { id: 'L1', text: '0:10 intro\n5:58 data types' },
+          { id: 'L2', text: '0:11 Intro\n5:58 Data Types\n9:00 arrays' },
+          { id: 'S', text: 'at 5:58 he forgot a semicolon' },
+        ],
+        600,
+      ),
+    ).toEqual([
+      { id: 'c_S_0', t: 358, text: 'at 5:58 he forgot a semicolon' },
+      { id: 'c_L1_0', t: 10, text: 'intro' },
+      { id: 'c_L1_1', t: 358, text: 'data types' },
+      { id: 'c_L2_2', t: 540, text: 'arrays' },
+    ]));
+});
+

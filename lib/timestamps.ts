@@ -32,7 +32,7 @@ export function parseIsoDuration(iso: string): number {
 }
 
 function collapse(text: string): string {
-  return text.replace(/\s+/g, ' ').trim();
+  return text.replace(/[​-‍﻿]/g, '').replace(/\s+/g, ' ').trim();
 }
 
 function truncate(text: string): string {
@@ -66,4 +66,30 @@ export function commentToDanmu(text: string, durationSec: number): SeedDanmu[] {
     if (rest) out.push({ t, text: truncate(rest) });
   }
   return out;
+}
+
+export const MAX_SEEDS = 300;
+
+export type Comment = { id: string; text: string };
+export type Seed = SeedDanmu & { id: string };
+
+/** Chapter entries from different lists this close together (seconds) count as the same chapter. */
+const SAME_CHAPTER = 2;
+
+/**
+ * All seed danmu for a video, with ids `c_<commentId>_<n>` so seeding twice writes the same docs.
+ * Single remarks ("at 5:58 he forgot a semicolon") come first; chapter lists repeat each other,
+ * so only one chapter per moment is kept.
+ */
+export function buildSeeds(comments: Comment[], durationSec: number): Seed[] {
+  const remarks: Seed[] = [];
+  const chapters: Seed[] = [];
+  for (const c of comments) {
+    const danmu = commentToDanmu(c.text, durationSec).map((d, n) => ({ id: `c_${c.id}_${n}`, ...d }));
+    if (danmu.length === 1) remarks.push(...danmu);
+    for (const d of danmu.length > 1 ? danmu : []) {
+      if (!chapters.some((kept) => Math.abs(kept.t - d.t) <= SAME_CHAPTER)) chapters.push(d);
+    }
+  }
+  return [...remarks, ...chapters].slice(0, MAX_SEEDS);
 }
