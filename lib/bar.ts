@@ -263,9 +263,8 @@ export class Bar {
     this.input.placeholder = `Send a danmu at ${formatTime(sec)}…`;
   }
 
-  setCount(total: number, fromComments: number): void {
-    this.count.textContent =
-      fromComments > 0 ? `${total} danmu · ${fromComments} from comments` : `${total} danmu`;
+  setCount(total: number): void {
+    this.count.textContent = `${total} danmu`;
   }
 
   setEnabled(on: boolean): void {

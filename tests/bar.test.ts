@@ -69,3 +69,10 @@ describe('Bar sending', () => {
     expect(input.value).toBe('hello');
   });
 });
+
+describe('Bar count', () => {
+  it('shows only the total number of danmu', () => {
+    bar.setCount(267);
+    expect(document.querySelector('.dm-count')!.textContent).toBe('267 danmu');
+  });
+});

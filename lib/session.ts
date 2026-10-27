@@ -65,9 +65,8 @@ export function startSession(videoId: string): () => void {
     overlay.applySettings(display);
     overlay.setVisible(enabled);
     if (video.paused) overlay.pause();
-    let fromComments = 0;
 
-    const updateCount = () => bar.setCount(timeline.size, fromComments);
+    const updateCount = () => bar.setCount(timeline.size);
     const bar = new Bar({
       async onSend(text) {
         const d: Danmu = { id: newDanmuId(), videoId, t: contentTime, text, source: 'user', ...style };
@@ -126,7 +125,7 @@ export function startSession(videoId: string): () => void {
     // Feature 2: timestamped YouTube comments, fetched for this viewer and never stored.
     void loadCommentDanmu(videoId, import.meta.env.WXT_YOUTUBE_API_KEY).then((items) => {
       if (stopped) return;
-      fromComments += timeline.add(items).length;
+      timeline.add(items);
       updateCount();
       resync();
     });
