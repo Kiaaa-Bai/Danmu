@@ -54,9 +54,12 @@ export class Overlay {
 
   /** New viewer settings: re-measure, and let the session re-lay what is flying. */
   applySettings(settings: DisplaySettings): void {
+    const old = this.settings;
     this.settings = settings;
     this.layer.style.opacity = String(settings.opacity);
-    this.measure(true);
+    // Opacity and density don't move anything; re-laying on every slider tick made danmaku jump.
+    const moved = old.area !== settings.area || old.fontScale !== settings.fontScale || old.speed !== settings.speed;
+    this.measure(moved);
   }
 
   private measure(relayout = false): void {
@@ -86,7 +89,7 @@ export class Overlay {
     const duration = mode === 'scroll' ? this.duration : FIXED_DURATION;
     const { density } = this.settings;
     if (!this.visible || this.width === 0 || age >= duration) return false;
-    if (this.flying.size >= DENSITY_LIMITS[density]) return false;
+    if (!own && this.flying.size >= DENSITY_LIMITS[density]) return false;
 
     const el = document.createElement('span');
     el.className = own ? 'dm-item dm-own' : 'dm-item';
@@ -96,8 +99,8 @@ export class Overlay {
     this.layer.append(el);
     const w = el.offsetWidth;
     const laneHeight = this.fontSize * LINE_HEIGHT;
-    // More density: when every lane is busy, overlap instead of dropping.
-    const overlap = density === 'high';
+    // More density, or your own danmu: when every lane is busy, overlap instead of dropping.
+    const overlap = density === 'high' || own;
 
     let keyframes: Keyframe[];
     if (mode === 'scroll') {

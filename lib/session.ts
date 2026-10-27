@@ -1,6 +1,6 @@
 import { Bar } from './bar';
+import { loadCommentDanmu } from './comments';
 import { FIXED_DURATION, Overlay } from './overlay';
-import { seedIfNeeded } from './seed';
 import { displaySetting, enabledSetting, sendStyleSetting } from './settings';
 import { newDanmuId, sendDanmu, subscribeDanmu, type Danmu } from './store';
 import { RESET_LOOKBACK, Timeline } from './timeline';
@@ -34,12 +34,21 @@ export function startSession(videoId: string): () => void {
     }, () => stopped);
     if (!found) return;
     const { player, video } = found;
+    // All awaits happen before anything is built, so a teardown can't land between building and cleanup.
+    let [enabled, style, display] = await Promise.all([
+      enabledSetting.getValue(),
+      sendStyleSetting.getValue(),
+      displaySetting.getValue(),
+    ]);
+    if (stopped) return;
 
     const timeline = new Timeline<Danmu>();
     const ownIds = new Set<string>();
     /** Own danmaku already shown on send; timeline.tick would hand them out a second time. */
     const shownOnSend = new Set<string>();
     let inAd = false;
+    /** The video's own time, frozen while an ad plays (the ad has its own currentTime). */
+    let contentTime = video.currentTime;
     /** Clears the screen and refills it with the danmaku that should be mid-flight right now. */
     const resync = () => {
       overlay.clear();
@@ -53,26 +62,24 @@ export function startSession(videoId: string): () => void {
       }
     };
     const overlay = new Overlay(player, resync);
+    overlay.applySettings(display);
+    overlay.setVisible(enabled);
+    if (video.paused) overlay.pause();
     let fromComments = 0;
-    let enabled = await enabledSetting.getValue();
-    let style = await sendStyleSetting.getValue();
-    overlay.applySettings(await displaySetting.getValue());
-    if (stopped) return overlay.destroy();
 
     const updateCount = () => bar.setCount(timeline.size, fromComments);
     const bar = new Bar({
       async onSend(text) {
-        const d: Danmu = { id: newDanmuId(), videoId, t: video.currentTime, text, source: 'user', ...style };
+        const d: Danmu = { id: newDanmuId(), videoId, t: contentTime, text, source: 'user', ...style };
         ownIds.add(d.id);
-        shownOnSend.add(d.id);
         timeline.add([d]);
         updateCount();
-        overlay.show(d, video.currentTime, video.playbackRate, true);
+        if (!inAd && overlay.show(d, d.t, video.playbackRate, true)) shownOnSend.add(d.id);
         await sendDanmu(d);
       },
       onToggle(on) {
         enabled = on;
-        overlay.setVisible(on && !player.classList.contains('ad-showing'));
+        overlay.setVisible(on && !inAd);
         void enabledSetting.setValue(on);
       },
       onStyle(next) {
@@ -86,15 +93,14 @@ export function startSession(videoId: string): () => void {
     });
     bar.setEnabled(enabled);
     bar.setStyle(style);
-    bar.setDisplay(await displaySetting.getValue());
-    overlay.setVisible(enabled);
+    bar.setDisplay(display);
     updateCount();
     cleanups.push(() => bar.destroy(), () => overlay.destroy());
 
+    // Feature 1: danmaku sent through the extension, live from Firestore.
     cleanups.push(
       subscribeDanmu(videoId, (items, initial) => {
         const fresh = timeline.add(items);
-        fromComments += fresh.filter((d) => d.source === 'comment').length;
         updateCount();
         if (initial) return resync();
         // Someone else just sent one a moment behind us: show it now instead of on the next rewatch.
@@ -107,9 +113,12 @@ export function startSession(videoId: string): () => void {
         }
       }),
     );
-    // Feature 2: the first viewer turns timestamped comments into danmaku; they arrive via the listener.
-    void seedIfNeeded(videoId, import.meta.env.WXT_YOUTUBE_API_KEY).then((n) => {
-      if (n !== null) console.log(`[danmu] seeded ${n} danmu from comments`);
+    // Feature 2: timestamped YouTube comments, fetched for this viewer and never stored.
+    void loadCommentDanmu(videoId, import.meta.env.WXT_YOUTUBE_API_KEY).then((items) => {
+      if (stopped) return;
+      fromComments += timeline.add(items).length;
+      updateCount();
+      resync();
     });
 
     const onPause = () => overlay.pause();
@@ -143,17 +152,20 @@ export function startSession(videoId: string): () => void {
         overlay.setVisible(enabled);
         resync();
       }
-      if (!inAd && !video.paused) {
-        for (const d of timeline.tick(video.currentTime)) {
-          if (shownOnSend.delete(d.id)) continue;
-          overlay.show(d, video.currentTime, video.playbackRate, ownIds.has(d.id));
+      if (!inAd) {
+        contentTime = video.currentTime;
+        if (!video.paused) {
+          for (const d of timeline.tick(contentTime)) {
+            if (shownOnSend.delete(d.id)) continue;
+            overlay.show(d, contentTime, video.playbackRate, ownIds.has(d.id));
+          }
         }
       }
       const now = performance.now();
       if (now - lastBarUpdate > BAR_UPDATE_MS) {
         lastBarUpdate = now;
         if (!bar.isMounted) bar.mount();
-        if (!inAd) bar.setTime(video.currentTime);
+        bar.setTime(contentTime);
       }
       raf = requestAnimationFrame(frame);
     };

@@ -175,13 +175,18 @@ export class Bar {
     this.input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.isComposing) this.submit();
     });
-    // Keep YouTube's shortcuts (k, f, j, l, m, space, /, arrows) from firing while typing or using sliders.
+    // Keep YouTube's shortcuts (k, f, j, l, m, space, /, arrows) from firing while typing or using
+    // sliders. Buttons let keys through, so k still pauses after clicking 弹 or Send.
     for (const type of ['keydown', 'keypress', 'keyup'] as const) {
       this.root.addEventListener(type, (e) => {
-        if (e.target !== this.root && (e as KeyboardEvent).key === 'Escape') this.closePanels();
-        e.stopPropagation();
+        if ((e as KeyboardEvent).key === 'Escape') this.closePanels();
+        if (e.target instanceof HTMLInputElement) e.stopPropagation();
       });
     }
+    // Clicking a button must not leave it focused, or space would press it again instead of pausing.
+    this.root.addEventListener('mousedown', (e) => {
+      if (e.target instanceof HTMLButtonElement) e.preventDefault();
+    });
     document.addEventListener('click', this.onDocumentClick, true);
     this.setEnabled(true);
   }

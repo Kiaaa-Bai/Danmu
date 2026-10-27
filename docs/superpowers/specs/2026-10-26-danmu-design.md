@@ -46,6 +46,18 @@ danmaku; the panel opens from a button on the input bar.
   updated and deployed. Old docs without them render white and scrolling.
 - Labels are English for the class audience; the 弹 toggle stays.
 
+## Change: comment danmaku are fetched live, not stored (2026-10-26 ~21:00, Kia)
+
+YouTube's API policy limits how long API data may be stored, so Kia decided: 「改成每次播放时现拉评论、不存。
+只存用户通过我们扩展发送的弹幕」 (*fetch comments live on each play and don't store them; store only danmaku
+users send through the extension*). This replaces the seeding design above:
+
+- Each viewer's content script fetches the duration + up to 500 comments when a video opens
+  (6 quota units), runs the same `buildSeeds` rules, and adds the result to the in-memory timeline
+  as `source: "comment"`. Kept in a per-tab memory cache; never written anywhere.
+- Firestore rules now accept only `source == 'user'`; `videos/{id}` claims are read-only and unused.
+- Not published to the Chrome Web Store for now (Kia, same message).
+
 ## Non-goals
 
 Login/accounts · likes, reports, moderation · Chrome Web

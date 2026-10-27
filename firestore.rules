@@ -16,7 +16,8 @@ service cloud.firestore {
         && request.resource.data.text is string
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 100
-        && request.resource.data.source in ['user', 'comment']
+        // Only danmaku sent through the extension are stored; comment danmaku are fetched live.
+        && request.resource.data.source == 'user'
         && request.resource.data.createdAt == request.time
         // Optional, chosen by the sender: colour as #RRGGBB, and scrolling or fixed at the top/bottom.
         && (!('color' in request.resource.data) || request.resource.data.color.matches('^#[0-9A-Fa-f]{6}$'))
@@ -24,16 +25,10 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // Seeding claim: created once per video, before its comment danmaku are written.
+    // Old seeding claims (comment danmaku are no longer stored). Read-only.
     match /videos/{videoId} {
       allow read: if true;
-      allow create: if videoId.matches('^[A-Za-z0-9_-]{11}$')
-        && request.resource.data.keys().hasOnly(['seededAt', 'seedCount'])
-        && request.resource.data.seededAt == request.time
-        && request.resource.data.seedCount is int
-        && request.resource.data.seedCount >= 0
-        && request.resource.data.seedCount <= 300;
-      allow update, delete: if false;
+      allow write: if false;
     }
   }
 }
