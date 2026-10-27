@@ -65,9 +65,10 @@
 }
 
 .dm-toggle {
-  width: 36px;
-  padding: 0;
-  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px 0 12px;
 }
 
 .dm-toggle[aria-pressed='false'] {
@@ -113,37 +114,18 @@
   border-color: var(--yt-spec-text-secondary, #606060);
 }
 
-/* The danmu count, inside the chat bubble of the on/off toggle. */
-.dm-toggle {
-  position: relative;
-}
-
-.dm-icon-btn.dm-toggle svg {
-  width: 28px;
-  height: 28px;
+/* The on/off pill: chat icon + danmu count. */
+.dm-toggle svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
 }
 
 .dm-toggle-count {
-  position: absolute;
-  top: 42%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.2px;
+  font-size: 14px;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
-  color: #fff;
-  pointer-events: none;
-}
-
-html[dark] .dm-toggle-count,
-.dm-bar.dm-bar-fs .dm-toggle-count {
-  color: #0f0f0f;
-}
-
-.dm-toggle[aria-pressed='false'] .dm-toggle-count {
-  display: none;
 }
 
 /* YouTube marks its dark theme with html[dark]. */
@@ -329,11 +311,13 @@ html[dark] .dm-icon-btn:hover {
 }
 
 .dm-bar.dm-bar-fs .dm-icon-btn,
+.dm-bar.dm-bar-fs .dm-toggle,
 .dm-bar.dm-bar-fs .dm-send {
   background: rgba(255, 255, 255, 0.12);
 }
 
 .dm-bar.dm-bar-fs .dm-icon-btn:hover,
+.dm-bar.dm-bar-fs .dm-toggle:hover,
 .dm-bar.dm-bar-fs .dm-send:hover {
   background: rgba(255, 255, 255, 0.22);
 }

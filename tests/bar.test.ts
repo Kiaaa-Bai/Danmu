@@ -71,7 +71,7 @@ describe('Bar sending', () => {
 });
 
 describe('Bar count', () => {
-  it('shows the number of danmu inside the chat bubble', () => {
+  it('shows the number of danmu in the toggle pill, next to the icon', () => {
     bar.setCount(267);
     expect(document.querySelector('.dm-toggle .dm-toggle-count')!.textContent).toBe('267');
     expect(document.querySelector('.dm-count')).toBeNull();
