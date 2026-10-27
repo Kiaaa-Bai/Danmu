@@ -5,6 +5,8 @@ import { newDanmuId, sendDanmu, subscribeDanmu, type Danmu } from './store';
 import { RESET_LOOKBACK, Timeline } from './timeline';
 
 const BAR_UPDATE_MS = 250;
+/** Seconds: a live danmu from another viewer shows at once if it was sent this close to our playback time. */
+const LIVE_WINDOW = 3;
 
 function waitFor<T>(find: () => T | null, isStopped: () => boolean): Promise<T | null> {
   return new Promise((resolve) => {
@@ -76,7 +78,15 @@ export function startSession(videoId: string): () => void {
         const fresh = timeline.add(items);
         fromComments += fresh.filter((d) => d.source === 'comment').length;
         updateCount();
-        if (initial) resync();
+        if (initial) return resync();
+        // Someone else just sent one a moment behind us: show it now instead of on the next rewatch.
+        // (One ahead of us will come out of timeline.tick when playback gets there.)
+        const now = video.currentTime;
+        for (const d of fresh) {
+          if (!ownIds.has(d.id) && !inAd && !video.paused && d.t <= now && now - d.t <= LIVE_WINDOW) {
+            overlay.show(d.text, now, video.playbackRate);
+          }
+        }
       }),
     );
 
