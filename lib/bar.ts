@@ -1,5 +1,4 @@
 import {
-  AREA_LABELS,
   AREA_STEPS,
   PALETTE,
   SPEED_LABELS,
@@ -26,12 +25,23 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, te
   return node;
 }
 
-/** A row of mutually exclusive buttons. */
-function segmented<T>(options: { value: T; label: string }[], onPick: (value: T) => void) {
+type SegOption<T> = { value: T; label?: string; title?: string; icon?: () => SVGSVGElement };
+
+/** A row of mutually exclusive buttons: text, an icon, or an icon over a short label. */
+function segmented<T>(options: SegOption<T>[], onPick: (value: T) => void) {
   const root = el('div', 'dm-seg');
   const buttons = options.map((o) => {
-    const b = el('button', 'dm-seg-btn', o.label);
+    const b = el('button', 'dm-seg-btn');
     b.type = 'button';
+    if (o.icon) {
+      b.classList.add(o.label ? 'dm-seg-stacked' : 'dm-seg-icon');
+      b.append(o.icon());
+    }
+    if (o.label) b.append(el('span', 'dm-seg-label', o.label));
+    if (o.title) {
+      b.title = o.title;
+      b.setAttribute('aria-label', o.title);
+    }
     b.addEventListener('click', () => onPick(o.value));
     root.append(b);
     return b;
@@ -87,15 +97,66 @@ function icon(d: string): SVGSVGElement {
   return svg;
 }
 
-/** The on/off toggle: a chat bubble, with a slash that CSS shows while danmaku are off. */
+function svgNode<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, string | number>): SVGElementTagNameMap[K] {
+  const node = document.createElementNS(SVG_NS, tag);
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, String(v));
+  return node;
+}
+
+const OFF_MASK_ID = 'dm-off-mask';
+
+/**
+ * The on/off toggle: a chat bubble. While danmaku are off, a slash crosses it with a gap cut out of
+ * the bubble around the slash (the mask), so the slash doesn't melt into the bubble's fill.
+ */
 function danmuIcon(): SVGSVGElement {
   const svg = icon(CHAT_PATH);
-  const slash = document.createElementNS(SVG_NS, 'line');
-  slash.setAttribute('class', 'dm-slash');
-  for (const [k, v] of Object.entries({ x1: '3', y1: '3', x2: '21', y2: '21' })) slash.setAttribute(k, v);
-  svg.append(slash);
+  const mask = svgNode('mask', { id: OFF_MASK_ID, maskUnits: 'userSpaceOnUse', x: 0, y: 0, width: 24, height: 24 });
+  mask.append(
+    svgNode('rect', { width: 24, height: 24, fill: 'white' }),
+    svgNode('line', { x1: 3, y1: 3, x2: 21, y2: 21, stroke: 'black', 'stroke-width': 6, 'stroke-linecap': 'round' }),
+  );
+  const defs = svgNode('defs', {});
+  defs.append(mask);
+  svg.prepend(defs);
+  svg.append(svgNode('line', { class: 'dm-slash', x1: 3, y1: 3, x2: 21, y2: 21 }));
   return svg;
 }
+
+/** A small player frame (28×20) with marks inside it, for the Area and Mode buttons. */
+function frameIcon(...marks: SVGElement[]): SVGSVGElement {
+  const svg = svgNode('svg', { viewBox: '0 0 28 20', 'aria-hidden': 'true', class: 'dm-frame-icon' });
+  svg.append(
+    svgNode('rect', { x: 1.75, y: 1.75, width: 24.5, height: 16.5, rx: 2.5, fill: 'none', stroke: 'currentColor', 'stroke-width': 1.5 }),
+    ...marks,
+  );
+  return svg;
+}
+
+/** Area: the top share of the frame filled in, the part of the player danmaku may use. */
+function areaIcon(share: number): SVGSVGElement {
+  return frameIcon(svgNode('rect', { x: 4, y: 4, width: 20, height: 12 * share, rx: 1, fill: 'currentColor' }));
+}
+
+/** Mode: an arrow flying right to left (normal), or a comment pinned to the top or bottom. */
+function modeIcon(mode: Mode): SVGSVGElement {
+  if (mode === 'scroll') {
+    return frameIcon(
+      svgNode('path', {
+        d: 'M20.5 10H8.5M11.75 6.75 8.5 10l3.25 3.25',
+        fill: 'none',
+        stroke: 'currentColor',
+        'stroke-width': 1.75,
+        'stroke-linecap': 'round',
+        'stroke-linejoin': 'round',
+      }),
+    );
+  }
+  const y = mode === 'top' ? 4.5 : 12.5;
+  return frameIcon(svgNode('rect', { x: 8, y, width: 12, height: 3, rx: 1.5, fill: 'currentColor' }));
+}
+
+const AREA_TITLES = ['Top quarter of the player', 'Top half of the player', 'Top three quarters of the player', 'Whole player'];
 
 /** 267 → "267", 1234 → "1.2k": keeps the toggle pill short. */
 function formatCount(n: number): string {
@@ -124,18 +185,20 @@ export class Bar {
   private style: SendStyle = { color: '#FFFFFF', mode: 'scroll' };
   private display!: DisplaySettings;
 
+  private total = 0;
+  // User testing (2026-10-27): "Scroll / Top / Bottom" and "1/4 … Full" read as jargon, so both are pictures now.
   private modeControl = segmented<Mode>(
     [
-      { value: 'scroll', label: 'Scroll' },
-      { value: 'top', label: 'Top' },
-      { value: 'bottom', label: 'Bottom' },
+      { value: 'scroll', label: 'Normal', title: 'Flies across, right to left', icon: () => modeIcon('scroll') },
+      { value: 'top', label: 'Top', title: 'Stays at the top for a few seconds', icon: () => modeIcon('top') },
+      { value: 'bottom', label: 'Bottom', title: 'Stays at the bottom for a few seconds', icon: () => modeIcon('bottom') },
     ],
     (mode) => this.updateStyle({ ...this.style, mode }),
   );
   private swatches: HTMLButtonElement[] = [];
   private opacityControl = slider(10, 100, 5, (v) => `${v}%`, (v) => this.updateDisplay({ opacity: v / 100 }));
   private areaControl = segmented<number>(
-    AREA_STEPS.map((value, i) => ({ value, label: AREA_LABELS[i]! })),
+    AREA_STEPS.map((value, i) => ({ value, title: AREA_TITLES[i]!, icon: () => areaIcon(value) })),
     (area) => this.updateDisplay({ area }),
   );
   private speedControl = slider(1, 5, 1, (v) => SPEED_LABELS[v - 1]!, (speed) => this.updateDisplay({ speed }));
@@ -309,13 +372,26 @@ export class Bar {
   }
 
   setCount(total: number): void {
-    this.count.textContent = formatCount(total);
-    this.toggle.title = `${total} bullet comment${total === 1 ? '' : 's'} · show or hide`;
+    this.total = total;
+    this.renderToggle();
   }
 
   setEnabled(on: boolean): void {
     this.enabled = on;
     this.toggle.setAttribute('aria-pressed', String(on));
+    this.renderToggle();
+  }
+
+  /** On: the count. Off: the word "Off" and a crossed-out bubble (testers missed the old dimmed look). */
+  private renderToggle(): void {
+    const bubble = this.toggle.querySelector('svg > path');
+    if (this.enabled) bubble?.removeAttribute('mask');
+    else bubble?.setAttribute('mask', `url(#${OFF_MASK_ID})`);
+    const n = this.total;
+    this.count.textContent = this.enabled ? formatCount(n) : 'Off';
+    this.toggle.title = this.enabled
+      ? `${n} bullet comment${n === 1 ? '' : 's'} · click to hide`
+      : 'Bullet comments are off · click to show';
   }
 
   destroy(): void {

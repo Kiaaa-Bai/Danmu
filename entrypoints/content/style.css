@@ -71,15 +71,11 @@
   padding: 0 14px 0 12px;
 }
 
-.dm-toggle[aria-pressed='false'] {
-  opacity: 0.6;
-}
-
-/* The slash over the chat bubble, only while danmaku are off. */
+/* The slash over the chat bubble, only while danmaku are off; the pill then reads "Off". */
 .dm-slash {
   display: none;
   stroke: currentColor;
-  stroke-width: 2.4;
+  stroke-width: 2;
   stroke-linecap: round;
 }
 
@@ -242,6 +238,27 @@ html[dark] .dm-input:focus {
 .dm-seg-btn[aria-pressed='true'] {
   color: #0f0f0f;
   background: #f1f1f1;
+}
+
+/* Area: a picture of the player only. Mode: the picture over a short label. */
+.dm-seg-icon,
+.dm-seg-stacked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.dm-seg-stacked {
+  gap: 1px;
+  height: 46px;
+  font-size: 12px;
+}
+
+.dm-seg-btn svg {
+  display: block;
+  width: 28px;
+  height: 20px;
 }
 
 .dm-slider {

@@ -135,7 +135,43 @@ describe('Bar wording', () => {
     ].join(' | ');
     expect(visible).not.toMatch(/danmu/i);
     expect(document.querySelector<HTMLInputElement>('.dm-input')!.placeholder).toBe('Add a bullet comment…');
-    expect(document.querySelector('.dm-toggle')!.getAttribute('title')).toBe('267 bullet comments · show or hide');
+    expect(document.querySelector('.dm-toggle')!.getAttribute('title')).toBe('267 bullet comments · click to hide');
+  });
+});
+
+describe('Bar after user testing (2026-10-27)', () => {
+  it('says "Off" and masks the bubble while bullet comments are off, and shows the count again when on', () => {
+    bar.setCount(267);
+    const toggle = document.querySelector<HTMLButtonElement>('.dm-toggle')!;
+    const count = toggle.querySelector('.dm-toggle-count')!;
+    const bubble = toggle.querySelector('svg > path')!;
+    toggle.click();
+    expect(count.textContent).toBe('Off');
+    expect(bubble.getAttribute('mask')).toBe('url(#dm-off-mask)');
+    expect(toggle.title).toBe('Bullet comments are off · click to show');
+    bar.setCount(300);
+    expect(count.textContent).toBe('Off');
+    toggle.click();
+    expect(count.textContent).toBe('300');
+    expect(bubble.hasAttribute('mask')).toBe(false);
+  });
+
+  it('draws Area as pictures of the player, with no 1/4 … Full text', () => {
+    const area = [...document.querySelectorAll('.dm-panel-display .dm-seg-icon')];
+    expect(area).toHaveLength(4);
+    expect(area.every((b) => b.querySelector('svg') && b.textContent === '')).toBe(true);
+    expect(area.map((b) => b.getAttribute('title'))).toEqual([
+      'Top quarter of the player',
+      'Top half of the player',
+      'Top three quarters of the player',
+      'Whole player',
+    ]);
+  });
+
+  it('names the modes Normal / Top / Bottom, each with a picture', () => {
+    const modes = [...document.querySelectorAll('.dm-panel-style .dm-seg-stacked')];
+    expect(modes.map((b) => b.textContent)).toEqual(['Normal', 'Top', 'Bottom']);
+    expect(modes.every((b) => b.querySelector('svg'))).toBe(true);
   });
 });
 
