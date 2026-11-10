@@ -86,7 +86,7 @@ export type Seed = SeedDanmu & { id: string };
 const SAME_CHAPTER = 2;
 
 /**
- * All seed danmu for a video, with ids `c_<commentId>_<n>` so seeding twice writes the same docs.
+ * All comment danmu for a video, with stable ids `c_<commentId>_<n>` so the timeline never adds one twice.
  * Single remarks ("at 5:58 he forgot a semicolon") come first; chapter lists repeat each other,
  * so only one chapter per moment is kept.
  */

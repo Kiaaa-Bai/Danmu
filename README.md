@@ -14,7 +14,7 @@ danmaku keep you company and point out mistakes right where they happen ("p5.js 
    live for each viewer and never stored (YouTube's API policy); only danmaku sent through the
    extension are saved. Chapter lists are split into one danmu per line.
 
-Bilibili-style controls: on/off (chat-bubble button), sender colour and Scroll / Top / Bottom ("A"), and viewer settings
+Bilibili-style controls: on/off (chat-bubble button), sender colour and Normal / Top / Bottom ("A"), and viewer settings
 (⚙) for opacity, display area, speed, font size and density. Danmaku pause, seek, change speed and go
 fullscreen with the video, and hide during ads.
 
@@ -41,7 +41,8 @@ Without a key everything works except danmaku from comments.
 - Each danmu is a `<span>` animated with the Web Animations API, so pause and playback speed map
   straight onto the animation. Lanes are chosen so a longer (faster) danmu never catches the one ahead.
 
-Logic is unit-tested (`pnpm test`): timestamp parsing, seeding rules, timeline, lanes.
+Logic is unit-tested (`pnpm test`): timestamp parsing, comment-to-danmu rules, timeline, lanes, and the
+input bar's keyboard and send handling.
 
 ## References
 

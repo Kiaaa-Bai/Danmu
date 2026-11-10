@@ -22,7 +22,6 @@ export const DEFAULT_DISPLAY: DisplaySettings = { opacity: 1, area: 0.5, speed: 
 export const SPEED_DURATIONS = [12, 10, 8, 6, 4] as const;
 export const SPEED_LABELS = ['Slowest', 'Slow', 'Normal', 'Fast', 'Fastest'] as const;
 export const AREA_STEPS = [0.25, 0.5, 0.75, 1] as const;
-export const AREA_LABELS = ['1/4', '1/2', '3/4', 'Full'] as const;
 
 /** Most danmaku on screen at once per density; `high` also lets scrolling danmaku overlap instead of dropping. */
 export const DENSITY_LIMITS: Record<Density, number> = { low: 15, normal: 40, high: Infinity };

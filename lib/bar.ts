@@ -266,7 +266,7 @@ export class Bar {
       if (e.key === 'Enter' && !e.isComposing) this.submit();
     });
     // Keep YouTube's shortcuts (k, f, j, l, m, space, /, arrows) from firing while typing or using
-    // sliders. Buttons let keys through, so k still pauses after clicking 弹 or Send.
+    // sliders. Buttons let keys through, so k still pauses after clicking the on/off pill or Send.
     for (const type of ['keydown', 'keypress', 'keyup'] as const) {
       this.root.addEventListener(type, (e) => {
         if ((e as KeyboardEvent).key === 'Escape') this.closePanels();
