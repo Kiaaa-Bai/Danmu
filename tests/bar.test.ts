@@ -183,11 +183,25 @@ describe('Bar after user testing (2026-10-27)', () => {
 
 
 describe('Bar YouTube row', () => {
+  const sw = () => document.querySelector<HTMLButtonElement>('.dm-yt [role="switch"]')!;
+
   it('sits in the gear panel', () => expect(document.querySelector('.dm-panel-display .dm-yt')).not.toBeNull());
 
-  it('reports On', () => {
-    [...document.querySelectorAll<HTMLButtonElement>('.dm-yt .dm-seg-btn')].find((b) => b.textContent === 'On')!.click();
+  it('says what it does next to a switch that starts off', () => {
+    expect(sw().textContent).toContain('Also post to YouTube comments');
+    expect(sw().getAttribute('aria-checked')).toBe('false');
+  });
+
+  it('reports On when switched on', () => {
+    sw().click();
     expect(onYouTube).toHaveBeenCalledWith(true);
+  });
+
+  it('reports Off when switched off', () => {
+    bar.setYouTube({ on: true, channelTitle: 'Kia Bai', error: null });
+    expect(sw().getAttribute('aria-checked')).toBe('true');
+    sw().click();
+    expect(onYouTube).toHaveBeenCalledWith(false);
   });
 
   it('shows the channel and Sign out when on', () => {

@@ -215,13 +215,9 @@ export class Bar {
     ],
     (density) => this.updateDisplay({ density }),
   );
-  private youtubeControl = segmented<boolean>(
-    [
-      { value: false, label: 'Off' },
-      { value: true, label: 'On' },
-    ],
-    (on) => this.handlers.onYouTube(on),
-  );
+  /** One switch with the sentence on it (Kia, 2026-11-23: "YouTube Off / On" didn't say what it does). */
+  private youtubeSwitch = el('button', 'dm-yt-switch');
+  private youtubeOn = false;
   private youtubeStatus = el('div', 'dm-yt-status');
   private signOutButton = el('button', 'dm-yt-signout', 'Sign out');
 
@@ -381,17 +377,21 @@ export class Bar {
   /** Last row of the gear panel: also post each sent bullet comment as a YouTube comment. */
   private youtubeRow(): HTMLElement {
     this.signOutButton.type = 'button';
-    this.youtubeControl.root.title = 'Also post to YouTube comments';
-    const box = el('div', 'dm-yt-box');
-    box.append(this.youtubeControl.root, this.youtubeStatus);
-    const r = row('YouTube', box);
-    r.classList.add('dm-yt');
+    this.youtubeSwitch.type = 'button';
+    this.youtubeSwitch.setAttribute('role', 'switch');
+    const track = el('span', 'dm-switch');
+    track.append(el('span', 'dm-switch-knob'));
+    this.youtubeSwitch.append(el('span', 'dm-yt-label', 'Also post to YouTube comments'), track);
+    this.youtubeSwitch.addEventListener('click', () => this.handlers.onYouTube(!this.youtubeOn));
+    const r = el('div', 'dm-yt');
+    r.append(this.youtubeSwitch, this.youtubeStatus);
     return r;
   }
 
   /** The switch, then either the last problem or which channel is posting. */
   setYouTube(state: YouTubeState): void {
-    this.youtubeControl.set(state.on);
+    this.youtubeOn = state.on;
+    this.youtubeSwitch.setAttribute('aria-checked', String(state.on));
     this.youtubeStatus.replaceChildren();
     if (state.error) this.youtubeStatus.textContent = state.error;
     else if (state.on && state.channelTitle) {
