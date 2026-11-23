@@ -50,3 +50,9 @@ export const PALETTE = [
 export const sendStyleSetting = storage.defineItem<SendStyle>('local:sendStyle', {
   fallback: { color: '#FFFFFF', mode: 'scroll' },
 });
+
+/** Also post each sent bullet comment as a YouTube comment. Off until the person turns it on. */
+export const postToYouTubeSetting = storage.defineItem<boolean>('local:postToYouTube', { fallback: false });
+
+/** The YouTube channel the person signed in with (its name), or null when signed out. */
+export const youtubeAccountSetting = storage.defineItem<string | null>('local:youtubeAccount', { fallback: null });
