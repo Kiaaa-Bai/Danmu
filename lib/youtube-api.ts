@@ -54,10 +54,11 @@ export async function postComment(token: string, videoId: string, text: string):
   return body.snippet.topLevelComment.id;
 }
 
-/** The signed-in person's channel name, or null when the Google account has no YouTube channel. */
-export async function fetchChannelTitle(token: string): Promise<string | null> {
+/** The signed-in person's channel (id and name), or null when the Google account has no YouTube channel. */
+export async function fetchChannel(token: string): Promise<{ id: string; title: string } | null> {
   const body = await authed(token, 'channels?part=snippet&mine=true');
-  return body.items?.[0]?.snippet?.title ?? null;
+  const ch = body.items?.[0];
+  return ch ? { id: ch.id, title: ch.snippet?.title ?? '' } : null;
 }
 
 const NO_CHANNEL = new Set(['ineligibleAccount', 'youtubeSignupRequired', 'channelNotFound']);

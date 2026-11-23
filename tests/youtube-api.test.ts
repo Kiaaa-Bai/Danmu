@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { failureFor, fetchChannelTitle, postComment, YouTubeApiError } from '@/lib/youtube-api';
+import { failureFor, fetchChannel, postComment, YouTubeApiError } from '@/lib/youtube-api';
 
 const fetchMock = vi.fn();
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
@@ -29,16 +29,16 @@ describe('postComment', () => {
   });
 });
 
-describe('fetchChannelTitle', () => {
-  it('returns the channel title', async () => {
-    fetchMock.mockResolvedValue(json({ items: [{ snippet: { title: 'Kia Bai' } }] }));
-    await expect(fetchChannelTitle('tok')).resolves.toBe('Kia Bai');
+describe('fetchChannel', () => {
+  it('returns the channel id and title', async () => {
+    fetchMock.mockResolvedValue(json({ items: [{ id: 'UC_kia', snippet: { title: 'Kia Bai' } }] }));
+    await expect(fetchChannel('tok')).resolves.toEqual({ id: 'UC_kia', title: 'Kia Bai' });
     expect(String(fetchMock.mock.calls[0]![0])).toBe('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true');
   });
 
   it('is null for an account with no channel', async () => {
     fetchMock.mockResolvedValue(json({ items: [] }));
-    await expect(fetchChannelTitle('tok')).resolves.toBeNull();
+    await expect(fetchChannel('tok')).resolves.toBeNull();
   });
 });
 

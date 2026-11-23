@@ -49,8 +49,67 @@ export async function switchYouTube(
   return { on: false, channelTitle: null, error: r.reason === 'cancelled' ? null : FAILURE_TEXT[r.reason] };
 }
 
-/** A post failed: say why. Signed out turns the switch off, so nothing is posted until they sign in again. */
-export function afterFailure(state: YouTubeState, reason: PostFailure): YouTubeState {
+/**
+ * A post failed: say why. Signed out turns the switch off, so nothing is posted until they sign in again.
+ * `off` means another tab already turned it off: follow quietly.
+ */
+export function afterFailure(state: YouTubeState, reason: PostFailure | 'off'): YouTubeState {
+  if (reason === 'off') return { on: false, channelTitle: state.channelTitle, error: null };
   if (reason === 'signedOut') return { on: false, channelTitle: null, error: FAILURE_TEXT.signedOut };
   return { ...state, error: FAILURE_TEXT[reason] };
+}
+
+export type SwitchDeps = {
+  signIn(): Promise<SignInResult>;
+  signOut(): Promise<void>;
+  /** Draw the state in the gear panel. */
+  render(state: YouTubeState): void;
+  /** Store it, so other tabs and the next visit follow. */
+  save(state: YouTubeState): void;
+};
+
+/**
+ * The YouTube switch of one tab. The latest thing the person did wins: a sign-in that finishes after they
+ * turned the switch off again (here or in another tab) is ignored, so nothing posts after they said Off.
+ */
+export class YouTubeSwitch {
+  private seq = 0;
+
+  constructor(
+    private state: YouTubeState,
+    private deps: SwitchDeps,
+  ) {}
+
+  get current(): YouTubeState {
+    return this.state;
+  }
+
+  async flip(on: boolean): Promise<void> {
+    const mine = ++this.seq;
+    const next = await switchYouTube(on, { channelTitle: this.state.channelTitle, signIn: () => this.deps.signIn() });
+    if (mine === this.seq) this.set(next);
+  }
+
+  async signOut(): Promise<void> {
+    ++this.seq;
+    await this.deps.signOut();
+    this.set({ on: false, channelTitle: null, error: null });
+  }
+
+  fail(reason: PostFailure | 'off'): void {
+    this.set(afterFailure(this.state, reason));
+  }
+
+  /** The stored setting changed, usually in another tab. Not saved again: it is already stored. */
+  sync(on: boolean, channelTitle: string | null): void {
+    ++this.seq;
+    this.state = { on, channelTitle, error: this.state.error };
+    this.deps.render(this.state);
+  }
+
+  private set(next: YouTubeState): void {
+    this.state = next;
+    this.deps.render(next);
+    this.deps.save(next);
+  }
 }

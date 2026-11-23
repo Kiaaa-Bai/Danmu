@@ -1,9 +1,9 @@
 import { Bar } from './bar';
 import { loadCommentDanmu } from './comments';
 import { isLinkedComment } from './linked';
-import type { PostResult, SignInResult, YouTubeState } from './messages';
+import type { PostResult, SignInResult } from './messages';
 import { FIXED_DURATION, Overlay } from './overlay';
-import { afterFailure, ask, postDanmu, switchYouTube } from './post-to-youtube';
+import { ask, postDanmu, YouTubeSwitch } from './post-to-youtube';
 import {
   displaySetting,
   enabledSetting,
@@ -78,13 +78,18 @@ export function startSession(videoId: string): () => void {
     if (video.paused) overlay.pause();
 
     const updateCount = () => bar.setCount(timeline.size);
-    let yt: YouTubeState = { on: postOn, channelTitle, error: null };
-    const setYt = (next: YouTubeState) => {
-      yt = next;
-      bar.setYouTube(next);
-      void postToYouTubeSetting.setValue(next.on);
-      void youtubeAccountSetting.setValue(next.channelTitle);
-    };
+    const yt = new YouTubeSwitch(
+      { on: postOn, channelTitle, error: null },
+      {
+        signIn: () => ask<SignInResult>({ type: 'signIn' }),
+        signOut: () => ask<void>({ type: 'signOut' }),
+        render: (state) => bar.setYouTube(state),
+        save: (state) => {
+          void postToYouTubeSetting.setValue(state.on);
+          void youtubeAccountSetting.setValue(state.channelTitle);
+        },
+      },
+    );
     /** YouTube comments that are copies of danmu sent through the extension: shown once, as the danmu. */
     const linked = new Set<string>();
     const link = (commentId: string) => {
@@ -110,14 +115,14 @@ export function startSession(videoId: string): () => void {
           throw err;
         }
         // Not awaited: the bullet comment is out; the YouTube copy follows on its own.
-        if (yt.on) {
+        if (yt.current.on) {
           void postDanmu(d, {
             send: (r) => ask<PostResult>(r),
             link: setCommentLink,
             onLinked: link,
             isStopped: () => stopped,
           }).then((r) => {
-            if (!r.ok && !stopped) setYt(afterFailure(yt, r.reason));
+            if (!r.ok && !stopped) yt.fail(r.reason);
           });
         }
       },
@@ -134,25 +139,24 @@ export function startSession(videoId: string): () => void {
         overlay.applySettings(settings);
         void displaySetting.setValue(settings);
       },
-      async onYouTube(on) {
-        setYt(
-          await switchYouTube(on, {
-            channelTitle: yt.channelTitle,
-            signIn: () => ask<SignInResult>({ type: 'signIn' }),
-          }),
-        );
+      onYouTube(on) {
+        void yt.flip(on);
       },
-      async onSignOut() {
-        await ask({ type: 'signOut' });
-        setYt({ on: false, channelTitle: null, error: null });
+      onSignOut() {
+        void yt.signOut();
       },
     });
     bar.setEnabled(enabled);
     bar.setStyle(style);
     bar.setDisplay(display);
-    bar.setYouTube(yt);
+    bar.setYouTube(yt.current);
     updateCount();
     cleanups.push(() => bar.destroy(), () => overlay.destroy());
+    // Another tab flipped the switch or signed out: follow it, so this tab never posts after "Off".
+    cleanups.push(
+      postToYouTubeSetting.watch((on) => yt.sync(on, yt.current.channelTitle)),
+      youtubeAccountSetting.watch((title) => yt.sync(yt.current.on && title !== null, title)),
+    );
 
     // Feature 1: danmaku sent through the extension, live from Firestore.
     cleanups.push(

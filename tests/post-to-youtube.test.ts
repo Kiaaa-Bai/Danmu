@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { FAILURE_TEXT, type PostResult } from '@/lib/messages';
-import { afterFailure, postDanmu, switchYouTube } from '@/lib/post-to-youtube';
+import { afterFailure, postDanmu, switchYouTube, YouTubeSwitch } from '@/lib/post-to-youtube';
 
 const d = { id: 'd1', videoId: 'vid12345678', t: 369.4, text: 'stuck here too' };
 const OK: PostResult = { ok: true, commentId: 'Ugx_new0001' };
@@ -109,4 +109,59 @@ describe('afterFailure', () => {
       channelTitle: 'Kia Bai',
       error: FAILURE_TEXT.commentsDisabled,
     }));
+});
+
+describe('afterFailure when the switch was turned off elsewhere', () => {
+  it('turns this tab off quietly, keeping the account', () =>
+    expect(afterFailure({ on: true, channelTitle: 'Kia Bai', error: null }, 'off')).toEqual({
+      on: false,
+      channelTitle: 'Kia Bai',
+      error: null,
+    }));
+});
+
+describe('YouTubeSwitch', () => {
+  function make(state = { on: false, channelTitle: null as string | null, error: null }) {
+    let finishSignIn!: (r: { ok: true; channelTitle: string }) => void;
+    const deps = {
+      signIn: vi.fn(() => new Promise<{ ok: true; channelTitle: string }>((r) => (finishSignIn = r))),
+      signOut: vi.fn(async () => {}),
+      render: vi.fn(),
+      save: vi.fn(),
+    };
+    return { sw: new YouTubeSwitch(state, deps), deps, finishSignIn: (t: string) => finishSignIn({ ok: true, channelTitle: t }) };
+  }
+
+  it('a newer Off wins over a sign-in that finishes later', async () => {
+    const { sw, finishSignIn } = make();
+    const signingIn = sw.flip(true);
+    await sw.flip(false);
+    finishSignIn('Kia Bai');
+    await signingIn;
+    expect(sw.current.on).toBe(false);
+  });
+
+  it('turns on after a sign-in nobody interrupted', async () => {
+    const { sw, deps, finishSignIn } = make();
+    const signingIn = sw.flip(true);
+    finishSignIn('Kia Bai');
+    await signingIn;
+    expect(sw.current).toEqual({ on: true, channelTitle: 'Kia Bai', error: null });
+    expect(deps.save).toHaveBeenLastCalledWith({ on: true, channelTitle: 'Kia Bai', error: null });
+  });
+
+  it('another tab turning it off turns this tab off, without saving again', () => {
+    const { sw, deps } = make({ on: true, channelTitle: 'Kia Bai', error: null });
+    sw.sync(false, 'Kia Bai');
+    expect(sw.current.on).toBe(false);
+    expect(deps.render).toHaveBeenLastCalledWith({ on: false, channelTitle: 'Kia Bai', error: null });
+    expect(deps.save).not.toHaveBeenCalled();
+  });
+
+  it('signing out clears the switch and the account', async () => {
+    const { sw, deps } = make({ on: true, channelTitle: 'Kia Bai', error: null });
+    await sw.signOut();
+    expect(deps.signOut).toHaveBeenCalledOnce();
+    expect(sw.current).toEqual({ on: false, channelTitle: null, error: null });
+  });
 });

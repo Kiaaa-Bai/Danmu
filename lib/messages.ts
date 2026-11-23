@@ -6,7 +6,8 @@ export type BgRequest = { type: 'signIn' } | { type: 'signOut' } | { type: 'post
 
 export type SignInResult = { ok: true; channelTitle: string } | { ok: false; reason: 'cancelled' | 'noChannel' | 'failed' };
 
-export type PostResult = { ok: true; commentId: string } | { ok: false; reason: PostFailure };
+/** `off`: the switch is off in storage (turned off in another tab), so nothing was posted. */
+export type PostResult = { ok: true; commentId: string } | { ok: false; reason: PostFailure | 'off' };
 
 /** The gear panel's YouTube row: switch, signed-in channel, last problem. */
 export type YouTubeState = { on: boolean; channelTitle: string | null; error: string | null };
