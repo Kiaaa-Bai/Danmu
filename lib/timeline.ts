@@ -36,6 +36,17 @@ export class Timeline<T extends { id: string; t: number }> {
     );
   }
 
+  /** Forgets every item that matches, e.g. comment danmaku that turned out to be copies. Returns how many. */
+  removeWhere(pred: (x: T) => boolean): number {
+    const before = this.items.length;
+    this.items = this.items.filter((x) => {
+      if (!pred(x)) return true;
+      this.ids.delete(x.id);
+      return false;
+    });
+    return before - this.items.length;
+  }
+
   reset(now: number): void {
     this.prev = now - RESET_LOOKBACK;
   }

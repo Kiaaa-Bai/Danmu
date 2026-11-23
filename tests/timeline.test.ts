@@ -78,3 +78,14 @@ describe('Timeline.remove', () => {
     expect(tl.size).toBe(1);
   });
 });
+
+describe('Timeline.removeWhere', () => {
+  it('drops matching items and says how many', () => {
+    const tl = new Timeline<{ id: string; t: number }>();
+    tl.add([{ id: 'a', t: 1 }, { id: 'b', t: 2 }, { id: 'c', t: 3 }]);
+    expect(tl.removeWhere((x) => x.id !== 'b')).toBe(2);
+    expect(tl.size).toBe(1);
+    expect(tl.has('a')).toBe(false);
+    expect(tl.between(0, 10).map((x) => x.id)).toEqual(['b']);
+  });
+});

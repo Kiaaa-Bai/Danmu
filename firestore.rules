@@ -3,7 +3,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // One danmaku. Anyone can read; anyone can add a well-formed one; nobody can edit or delete.
+    // One danmaku. Anyone can read; anyone can add a well-formed one; only its YouTube link can be added later; nobody can delete.
     match /danmu/{id} {
       allow read: if true;
       allow create: if request.resource.data.keys().hasOnly(['videoId', 't', 'text', 'source', 'createdAt', 'color', 'mode'])
@@ -22,7 +22,12 @@ service cloud.firestore {
         // Optional, chosen by the sender: colour as #RRGGBB, and scrolling or fixed at the top/bottom.
         && (!('color' in request.resource.data) || request.resource.data.color.matches('^#[0-9A-Fa-f]{6}$'))
         && (!('mode' in request.resource.data) || request.resource.data.mode in ['scroll', 'top', 'bottom']);
-      allow update, delete: if false;
+      // The YouTube comment this danmu was also posted as: set once, after posting, and nothing else changes.
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ytCommentId'])
+        && !('ytCommentId' in resource.data)
+        && request.resource.data.ytCommentId is string
+        && request.resource.data.ytCommentId.matches('^[A-Za-z0-9_-]{10,64}$');
+      allow delete: if false;
     }
 
     // Old seeding claims (comment danmaku are no longer stored). Read-only.
