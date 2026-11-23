@@ -24,6 +24,15 @@ export function parseTimestamps(text: string): number[] {
   return findTimestamps(text).map((f) => f.t);
 }
 
+/** 369.4 → "6:09", 3729 → "1:02:09": the form YouTube links in comments. */
+export function formatStamp(t: number): string {
+  const total = Math.max(0, Math.floor(t));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = String(total % 60).padStart(2, '0');
+  return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`;
+}
+
 export function parseIsoDuration(iso: string): number {
   const m = /^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/.exec(iso);
   if (!m) return 0;

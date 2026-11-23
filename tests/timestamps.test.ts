@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildSeeds, commentToDanmu, MAX_SEEDS, parseIsoDuration, parseTimestamps } from '@/lib/timestamps';
+import { buildSeeds, commentToDanmu, formatStamp, MAX_SEEDS, parseIsoDuration, parseTimestamps } from '@/lib/timestamps';
 
 describe('parseTimestamps', () => {
   it('reads m:ss', () => expect(parseTimestamps('data types and variables 5:58')).toEqual([358]));
@@ -86,3 +86,16 @@ describe('buildSeeds', () => {
     ]));
 });
 
+
+describe('formatStamp', () => {
+  it.each([
+    [5, '0:05'],
+    [369.4, '6:09'],
+    [3599.9, '59:59'],
+    [3729, '1:02:09'],
+  ])('%s s → %s', (t, s) => expect(formatStamp(t)).toBe(s));
+
+  it('reads back through comment danmaku at the same second', () => {
+    expect(commentToDanmu(`${formatStamp(369.4)} stuck here too`, 600)).toEqual([{ t: 369, text: 'stuck here too' }]);
+  });
+});
