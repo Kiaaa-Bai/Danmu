@@ -1,3 +1,4 @@
+import type { PostFailure } from './messages';
 import { parseIsoDuration, type Comment } from './timestamps';
 
 const API = 'https://www.googleapis.com/youtube/v3';
@@ -6,6 +7,7 @@ export class YouTubeApiError extends Error {
   constructor(
     public reason: string,
     message: string,
+    public status = 0,
   ) {
     super(message);
   }
@@ -15,12 +17,60 @@ async function get(path: string, params: Record<string, string>, key: string): P
   const url = new URL(`${API}/${path}`);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   url.searchParams.set('key', key);
-  const res = await fetch(url);
+  return readBody(await fetch(url));
+}
+
+async function readBody(res: Response): Promise<any> {
   const body = await res.json();
   if (!res.ok) {
-    throw new YouTubeApiError(body.error?.errors?.[0]?.reason ?? String(res.status), body.error?.message ?? res.statusText);
+    throw new YouTubeApiError(
+      body.error?.errors?.[0]?.reason ?? String(res.status),
+      body.error?.message ?? res.statusText,
+      res.status,
+    );
   }
   return body;
+}
+
+/** A call made as the signed-in person (OAuth access token instead of the API key). */
+async function authed(token: string, path: string, init: { method?: string; body?: unknown } = {}): Promise<any> {
+  const res = await fetch(`${API}/${path}`, {
+    method: init.method ?? 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(init.body === undefined ? {} : { 'Content-Type': 'application/json' }),
+    },
+    ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
+  });
+  return readBody(res);
+}
+
+/** Posts a top-level comment as the signed-in channel (50 quota units). Returns the new comment's id. */
+export async function postComment(token: string, videoId: string, text: string): Promise<string> {
+  const body = await authed(token, 'commentThreads?part=snippet', {
+    method: 'POST',
+    body: { snippet: { videoId, topLevelComment: { snippet: { textOriginal: text } } } },
+  });
+  return body.snippet.topLevelComment.id;
+}
+
+/** The signed-in person's channel name, or null when the Google account has no YouTube channel. */
+export async function fetchChannelTitle(token: string): Promise<string | null> {
+  const body = await authed(token, 'channels?part=snippet&mine=true');
+  return body.items?.[0]?.snippet?.title ?? null;
+}
+
+const NO_CHANNEL = new Set(['ineligibleAccount', 'youtubeSignupRequired', 'channelNotFound']);
+const OUT_OF_QUOTA = new Set(['quotaExceeded', 'dailyLimitExceeded']);
+
+/** Which of the reasons the panel can explain a failed post comes down to. */
+export function failureFor(err: unknown): PostFailure {
+  if (!(err instanceof YouTubeApiError)) return 'failed';
+  if (err.status === 401) return 'signedOut';
+  if (err.reason === 'commentsDisabled') return 'commentsDisabled';
+  if (OUT_OF_QUOTA.has(err.reason)) return 'quotaExceeded';
+  if (NO_CHANNEL.has(err.reason)) return 'noChannel';
+  return 'failed';
 }
 
 /** The video's real length. Not `<video>.duration`, which is the ad's length while a pre-roll plays. */
