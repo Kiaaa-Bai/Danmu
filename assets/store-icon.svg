@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- Chrome Web Store listing icon: the same mark as icon.svg, 96 px wide with 16 px transparent padding (store guideline). -->
+  <g fill="#AAAAAA" transform="translate(16 33.92) scale(1.28) translate(-26.5 -41)">
+    <path d="M59.35 43 A14 14 0 0 0 58 49 V69 A14 14 0 0 0 59.35 75 H53 C40.5 75 31 69.5 28.5 61 Q28 59 28.5 57 C31 48.5 40.5 43 53 43 Z" stroke="#AAAAAA" stroke-width="2" stroke-linejoin="round"/>
+    <path fill-rule="evenodd" d="M72 42 H94 Q101 42 101 49 V69 Q101 76 95 76 L96.5 84 Q97 88 93.5 86 L83 76 H72 Q65 76 65 69 V49 Q65 42 72 42 Z M74.5 52 H91.5 A2.5 2.5 0 0 1 91.5 57 H74.5 A2.5 2.5 0 0 1 74.5 52 Z M74.5 62 H83.5 A2.5 2.5 0 0 1 83.5 67 H74.5 A2.5 2.5 0 0 1 74.5 62 Z"/>
+  </g>
+</svg>

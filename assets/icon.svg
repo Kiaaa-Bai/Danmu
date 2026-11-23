@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <!-- Bullet Comments icon (Kia, 2026-11-23): a bullet nose whose back follows the chat bubble's left corners,
-       inset 1 px so its 2 px rounding stroke lands exactly on the bubble's top and bottom edges (y 42 and 76),
-       then the playback bar's chat bubble with two text lines and a rounded tail. Neutral colours on purpose:
-       the product itself has no brand colour (#1C1C1C = settings panel grey, #F1F1F1 = default bullet comment white). -->
-  <rect x="16" y="16" width="96" height="96" rx="22" fill="#1C1C1C"/>
-  <path d="M59.35 43 A14 14 0 0 0 58 49 V69 A14 14 0 0 0 59.35 75 H53 C40.5 75 31 69.5 28.5 61 Q28 59 28.5 57 C31 48.5 40.5 43 53 43 Z" fill="#F1F1F1" stroke="#F1F1F1" stroke-width="2" stroke-linejoin="round"/>
-  <path d="M72 42 H94 Q101 42 101 49 V69 Q101 76 95 76 L96.5 84 Q97 88 93.5 86 L83 76 H72 Q65 76 65 69 V49 Q65 42 72 42 Z" fill="#F1F1F1"/>
-  <rect x="72" y="52" width="22" height="5" rx="2.5" fill="#1C1C1C"/>
-  <rect x="72" y="62" width="14" height="5" rx="2.5" fill="#1C1C1C"/>
+  <!-- Bullet Comments icon (Kia, 2026-11-23): bullet nose whose back follows the bubble's left corners, then the
+       playback bar's chat bubble with two cut-out text lines and a rounded tail. No background tile (Kia: cleaner,
+       like Claude's icon); grey #AAAAAA = the settings-panel label grey, readable on both light and dark Chrome menus.
+       Nose path is inset 1 px so its 2 px rounding stroke lands on the bubble's top and bottom edges.
+       Mark spans x 26.5-101.5, y 41-88 in this coordinate space; scaled to fill the canvas. -->
+  <g fill="#AAAAAA" transform="translate(4 26.4) scale(1.6) translate(-26.5 -41)">
+    <path d="M59.35 43 A14 14 0 0 0 58 49 V69 A14 14 0 0 0 59.35 75 H53 C40.5 75 31 69.5 28.5 61 Q28 59 28.5 57 C31 48.5 40.5 43 53 43 Z" stroke="#AAAAAA" stroke-width="2" stroke-linejoin="round"/>
+    <path fill-rule="evenodd" d="M72 42 H94 Q101 42 101 49 V69 Q101 76 95 76 L96.5 84 Q97 88 93.5 86 L83 76 H72 Q65 76 65 69 V49 Q65 42 72 42 Z M74.5 52 H91.5 A2.5 2.5 0 0 1 91.5 57 H74.5 A2.5 2.5 0 0 1 74.5 52 Z M74.5 62 H83.5 A2.5 2.5 0 0 1 83.5 67 H74.5 A2.5 2.5 0 0 1 74.5 62 Z"/>
+  </g>
 </svg>
