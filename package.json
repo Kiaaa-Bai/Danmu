@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "wxt",
     "build": "wxt build",
+    "zip:store": "DANMU_STORE=1 wxt zip",
     "test": "vitest run",
     "postinstall": "wxt prepare"
   },
