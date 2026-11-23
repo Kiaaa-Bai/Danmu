@@ -1,8 +1,17 @@
 import { Bar } from './bar';
 import { loadCommentDanmu } from './comments';
+import { isLinkedComment } from './linked';
+import type { PostResult, SignInResult, YouTubeState } from './messages';
 import { FIXED_DURATION, Overlay } from './overlay';
-import { displaySetting, enabledSetting, sendStyleSetting } from './settings';
-import { newDanmuId, sendDanmu, subscribeDanmu, type Danmu } from './store';
+import { afterFailure, ask, postDanmu, switchYouTube } from './post-to-youtube';
+import {
+  displaySetting,
+  enabledSetting,
+  postToYouTubeSetting,
+  sendStyleSetting,
+  youtubeAccountSetting,
+} from './settings';
+import { newDanmuId, sendDanmu, setCommentLink, subscribeDanmu, type Danmu } from './store';
 import { RESET_LOOKBACK, Timeline } from './timeline';
 
 const BAR_UPDATE_MS = 250;
@@ -35,10 +44,12 @@ export function startSession(videoId: string): () => void {
     if (!found) return;
     const { player, video } = found;
     // All awaits happen before anything is built, so a teardown can't land between building and cleanup.
-    let [enabled, style, display] = await Promise.all([
+    let [enabled, style, display, postOn, channelTitle] = await Promise.all([
       enabledSetting.getValue(),
       sendStyleSetting.getValue(),
       displaySetting.getValue(),
+      postToYouTubeSetting.getValue(),
+      youtubeAccountSetting.getValue(),
     ]);
     if (stopped) return;
 
@@ -67,6 +78,19 @@ export function startSession(videoId: string): () => void {
     if (video.paused) overlay.pause();
 
     const updateCount = () => bar.setCount(timeline.size);
+    let yt: YouTubeState = { on: postOn, channelTitle, error: null };
+    const setYt = (next: YouTubeState) => {
+      yt = next;
+      bar.setYouTube(next);
+      void postToYouTubeSetting.setValue(next.on);
+      void youtubeAccountSetting.setValue(next.channelTitle);
+    };
+    /** YouTube comments that are copies of danmu sent through the extension: shown once, as the danmu. */
+    const linked = new Set<string>();
+    const link = (commentId: string) => {
+      linked.add(commentId);
+      if (timeline.removeWhere((x) => isLinkedComment(x, linked)) > 0) updateCount();
+    };
     const bar = new Bar({
       async onSend(text) {
         const d: Danmu = { id: newDanmuId(), videoId, t: contentTime, text, source: 'user', ...style };
@@ -85,6 +109,17 @@ export function startSession(videoId: string): () => void {
           updateCount();
           throw err;
         }
+        // Not awaited: the bullet comment is out; the YouTube copy follows on its own.
+        if (yt.on) {
+          void postDanmu(d, {
+            send: (r) => ask<PostResult>(r),
+            link: setCommentLink,
+            onLinked: link,
+            isStopped: () => stopped,
+          }).then((r) => {
+            if (!r.ok && !stopped) setYt(afterFailure(yt, r.reason));
+          });
+        }
       },
       onToggle(on) {
         enabled = on;
@@ -99,10 +134,23 @@ export function startSession(videoId: string): () => void {
         overlay.applySettings(settings);
         void displaySetting.setValue(settings);
       },
+      async onYouTube(on) {
+        setYt(
+          await switchYouTube(on, {
+            channelTitle: yt.channelTitle,
+            signIn: () => ask<SignInResult>({ type: 'signIn' }),
+          }),
+        );
+      },
+      async onSignOut() {
+        await ask({ type: 'signOut' });
+        setYt({ on: false, channelTitle: null, error: null });
+      },
     });
     bar.setEnabled(enabled);
     bar.setStyle(style);
     bar.setDisplay(display);
+    bar.setYouTube(yt);
     updateCount();
     cleanups.push(() => bar.destroy(), () => overlay.destroy());
 
@@ -110,6 +158,7 @@ export function startSession(videoId: string): () => void {
     cleanups.push(
       subscribeDanmu(videoId, (items, initial) => {
         const fresh = timeline.add(items);
+        for (const d of items) if (d.ytCommentId) link(d.ytCommentId);
         updateCount();
         if (initial) return resync();
         // Someone else just sent one a moment behind us: show it now instead of on the next rewatch.
@@ -125,7 +174,7 @@ export function startSession(videoId: string): () => void {
     // Feature 2: timestamped YouTube comments, fetched for this viewer and never stored.
     void loadCommentDanmu(videoId, import.meta.env.WXT_YOUTUBE_API_KEY).then((items) => {
       if (stopped) return;
-      timeline.add(items);
+      timeline.add(items.filter((x) => !isLinkedComment(x, linked)));
       updateCount();
       resync();
     });

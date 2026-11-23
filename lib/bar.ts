@@ -7,6 +7,7 @@ import {
   type Mode,
   type SendStyle,
 } from './settings';
+import type { YouTubeState } from './messages';
 
 const MAX_LENGTH = 100;
 const SEND_COOLDOWN_MS = 2000;
@@ -16,6 +17,9 @@ export type BarHandlers = {
   onToggle(on: boolean): void;
   onStyle(style: SendStyle): void;
   onDisplay(settings: DisplaySettings): void;
+  /** The YouTube switch in the gear panel was flipped. */
+  onYouTube(on: boolean): void;
+  onSignOut(): void;
 };
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text?: string): HTMLElementTagNameMap[K] {
@@ -211,6 +215,15 @@ export class Bar {
     ],
     (density) => this.updateDisplay({ density }),
   );
+  private youtubeControl = segmented<boolean>(
+    [
+      { value: false, label: 'Off' },
+      { value: true, label: 'On' },
+    ],
+    (on) => this.handlers.onYouTube(on),
+  );
+  private youtubeStatus = el('div', 'dm-yt-status');
+  private signOutButton = el('button', 'dm-yt-signout', 'Sign out');
 
   constructor(private handlers: BarHandlers) {
     for (const b of [this.toggle, this.styleButton, this.send, this.settingsButton]) b.type = 'button';
@@ -241,6 +254,7 @@ export class Bar {
       row('Speed', this.speedControl.root),
       row('Font size', this.sizeControl.root),
       row('Density', this.densityControl.root),
+      this.youtubeRow(),
     );
     this.stylePanel.hidden = true;
     this.displayPanel.hidden = true;
@@ -261,6 +275,7 @@ export class Bar {
     });
     this.styleButton.addEventListener('click', () => this.openPanel(this.stylePanel));
     this.settingsButton.addEventListener('click', () => this.openPanel(this.displayPanel));
+    this.signOutButton.addEventListener('click', () => this.handlers.onSignOut());
     this.send.addEventListener('click', () => this.submit());
     this.input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.isComposing) this.submit();
@@ -283,6 +298,7 @@ export class Bar {
     }
     document.addEventListener('click', this.onDocumentClick, true);
     this.setEnabled(true);
+    this.setYouTube({ on: false, channelTitle: null, error: null });
   }
 
   private onDocumentClick = (e: MouseEvent) => {
@@ -360,6 +376,27 @@ export class Bar {
     this.styleButton.style.color = style.color;
     this.modeControl.set(style.mode);
     this.swatches.forEach((s, i) => s.setAttribute('aria-pressed', String(PALETTE[i] === style.color)));
+  }
+
+  /** Last row of the gear panel: also post each sent bullet comment as a YouTube comment. */
+  private youtubeRow(): HTMLElement {
+    this.signOutButton.type = 'button';
+    this.youtubeControl.root.title = 'Also post to YouTube comments';
+    const box = el('div', 'dm-yt-box');
+    box.append(this.youtubeControl.root, this.youtubeStatus);
+    const r = row('YouTube', box);
+    r.classList.add('dm-yt');
+    return r;
+  }
+
+  /** The switch, then either the last problem or which channel is posting. */
+  setYouTube(state: YouTubeState): void {
+    this.youtubeControl.set(state.on);
+    this.youtubeStatus.replaceChildren();
+    if (state.error) this.youtubeStatus.textContent = state.error;
+    else if (state.on && state.channelTitle) {
+      this.youtubeStatus.append(`Posting as ${state.channelTitle} · `, this.signOutButton);
+    }
   }
 
   setDisplay(settings: DisplaySettings): void {

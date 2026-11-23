@@ -1,9 +1,11 @@
 // @vitest-environment happy-dom
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Bar } from '@/lib/bar';
 import { DEFAULT_DISPLAY } from '@/lib/settings';
 
 let bar: Bar;
+let onYouTube: ReturnType<typeof vi.fn<(on: boolean) => void>>;
+let onSignOut: ReturnType<typeof vi.fn<() => void>>;
 let seen: string[];
 const record = (e: KeyboardEvent) => seen.push(e.key);
 
@@ -13,7 +15,9 @@ function press(target: Element, key: string) {
 
 beforeEach(() => {
   document.body.innerHTML = '<ytd-watch-flexy><div id="below"></div></ytd-watch-flexy>';
-  bar = new Bar({ onSend: async () => {}, onToggle() {}, onStyle() {}, onDisplay() {} });
+  onYouTube = vi.fn<(on: boolean) => void>();
+  onSignOut = vi.fn<() => void>();
+  bar = new Bar({ onSend: async () => {}, onToggle() {}, onStyle() {}, onDisplay() {}, onYouTube, onSignOut });
   bar.setDisplay(DEFAULT_DISPLAY);
   bar.mount();
   seen = [];
@@ -59,6 +63,8 @@ describe('Bar sending', () => {
       onToggle() {},
       onStyle() {},
       onDisplay() {},
+      onYouTube() {},
+      onSignOut() {},
     });
     bar.setDisplay(DEFAULT_DISPLAY);
     bar.mount();
@@ -175,3 +181,24 @@ describe('Bar after user testing (2026-10-27)', () => {
   });
 });
 
+
+describe('Bar YouTube row', () => {
+  it('sits in the gear panel', () => expect(document.querySelector('.dm-panel-display .dm-yt')).not.toBeNull());
+
+  it('reports On', () => {
+    [...document.querySelectorAll<HTMLButtonElement>('.dm-yt .dm-seg-btn')].find((b) => b.textContent === 'On')!.click();
+    expect(onYouTube).toHaveBeenCalledWith(true);
+  });
+
+  it('shows the channel and Sign out when on', () => {
+    bar.setYouTube({ on: true, channelTitle: 'Kia Bai', error: null });
+    expect(document.querySelector('.dm-yt-status')!.textContent).toContain('Posting as Kia Bai');
+    document.querySelector<HTMLButtonElement>('.dm-yt-signout')!.click();
+    expect(onSignOut).toHaveBeenCalledOnce();
+  });
+
+  it('shows the error instead of the channel', () => {
+    bar.setYouTube({ on: false, channelTitle: null, error: "Couldn't post to YouTube" });
+    expect(document.querySelector('.dm-yt-status')!.textContent).toBe("Couldn't post to YouTube");
+  });
+});
