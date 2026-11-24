@@ -1,5 +1,7 @@
 import './style.css';
+import { browser } from 'wxt/browser';
 import { startSession } from '@/lib/session';
+import { shouldShowUpdateNotice, showUpdateNotice } from '@/lib/update-notice';
 
 function currentVideoId(): string | null {
   return location.pathname === '/watch' ? new URLSearchParams(location.search).get('v') : null;
@@ -23,9 +25,14 @@ export default defineContentScript({
 
     sync();
     document.addEventListener('yt-navigate-finish', sync);
+    // Chrome never tells a content script that its extension was updated or reloaded. ctx.setInterval checks
+    // the extension is still there on every tick, and fires onInvalidated within a second once it isn't.
+    ctx.setInterval(() => {}, 1000);
     ctx.onInvalidated(() => {
       document.removeEventListener('yt-navigate-finish', sync);
       teardown?.();
+      teardown = null;
+      if (shouldShowUpdateNotice(videoId !== null, browser.runtime?.id)) showUpdateNotice(() => location.reload());
     });
   },
 });

@@ -1,4 +1,5 @@
 import { Bar } from './bar';
+import { runCleanups } from './cleanup';
 import { loadCommentDanmu } from './comments';
 import { isLinkedComment } from './linked';
 import type { PostResult, SignInResult } from './messages';
@@ -242,6 +243,6 @@ export function startSession(videoId: string): () => void {
 
   return () => {
     stopped = true;
-    for (const fn of cleanups.splice(0).reverse()) fn();
+    runCleanups(cleanups);
   };
 }
